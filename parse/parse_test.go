@@ -12,7 +12,6 @@ import (
 )
 
 func TestParseInterface(t *testing.T) {
-
 	const (
 		src1 = `package p
 
@@ -21,7 +20,7 @@ var X = f(3.14)*2 + c
 // Comment
 type MyInterface interface {
 	other.Inter
-	foo(x other.Type, bar, baz string) Other
+	foo(x other.Type, bar, baz string) (o other.Other, oo map[string]SamePackage)
 }
 `
 
@@ -38,12 +37,13 @@ type MyInterface other.Other`
 	}{
 		{src1, 1, "unexpected identifier", parse.InterfaceResult{}},
 		{src1, 18, "interface not found", parse.InterfaceResult{}},
+
 		{src1, 5, "", parse.InterfaceResult{
 			Name:       "MyInterface",
 			References: []parse.Reference{{PackageID: "other", Name: "Inter"}},
 			Methods: []parse.Method{{
 				Params:  []parse.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}},
-				Results: []parse.Ident{{Name: "", Type: "Other"}},
+				Results: []parse.Ident{{Name: "o", Type: "other.Other"}, {Name: "oo", Type: "map[string]p.SamePackage"}},
 			}},
 		}},
 

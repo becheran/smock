@@ -29,6 +29,8 @@ type InterfaceResult struct {
 }
 
 func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i InterfaceResult, err error) {
+	packageName := file.Name.Name
+
 	for _, decl := range file.Decls {
 		line := fset.Position(decl.Pos()).Line
 
@@ -75,9 +77,9 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i Inter
 					switch meth := it.Type.(type) {
 					case *ast.FuncType:
 						methods = append(methods, Method{
-							TypeParams: fieldListToIdent(meth.TypeParams),
-							Params:     fieldListToIdent(meth.Params),
-							Results:    fieldListToIdent(meth.Results),
+							TypeParams: fieldListToIdent(meth.TypeParams, packageName),
+							Params:     fieldListToIdent(meth.Params, packageName),
+							Results:    fieldListToIdent(meth.Results, packageName),
 						})
 					default:
 						return InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
@@ -114,24 +116,14 @@ func expToReference(exp ast.Expr) *Reference {
 	}
 	return nil
 }
-func fieldListToIdent(list *ast.FieldList) (res []Ident) {
+
+func fieldListToIdent(list *ast.FieldList, packageName string) (res []Ident) {
 	if list == nil {
 		return
 	}
 	for _, l := range list.List {
-		identType := ""
-		switch t := l.Type.(type) {
-		case *ast.Ident:
-			identType = t.String()
-
-		case *ast.SelectorExpr:
-			if xIdent, ok := t.X.(*ast.Ident); ok {
-				identType = xIdent.String()
-			}
-			identType += "." + t.Sel.String()
-		default:
-			continue
-		}
+		tr := typeResolver{PackageName: packageName}
+		identType := tr.resolveType(l.Type)
 
 		if len(l.Names) == 0 {
 			res = append(res, Ident{Type: identType})
@@ -143,4 +135,109 @@ func fieldListToIdent(list *ast.FieldList) (res []Ident) {
 
 	}
 	return
+}
+
+type typeResolver struct {
+	PackageName string
+	// TODO generic types
+}
+
+func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
+	if exp == nil {
+		return "" // For example in case of nil
+	}
+	switch t := exp.(type) {
+	case *ast.Ident:
+		// TODO check if is generic
+		identType = t.String()
+		if t.IsExported() {
+			identType = tr.PackageName + "." + identType
+		}
+	case *ast.SelectorExpr:
+		if xIdent, ok := t.X.(*ast.Ident); ok {
+			identType = xIdent.String()
+		}
+		identType += "." + t.Sel.String()
+	case *ast.MapType:
+		identType += "map["
+		identType += tr.resolveType(t.Key)
+		identType += "]"
+		identType += tr.resolveType(t.Value)
+	case *ast.ArrayType:
+		identType += "[" + tr.resolveType(t.Len) + "]"
+		identType += tr.resolveType(t.Elt)
+	case *ast.Ellipsis:
+		identType += "..."
+	case *ast.FuncType:
+		// TODO generic types
+		identType += "func("
+		for idx, param := range t.Params.List {
+			identType += tr.resolveType(param.Type)
+			if idx+1 < len(t.Params.List) {
+				identType += ","
+			}
+		}
+		identType += ")"
+		if len(t.Results.List) > 0 {
+			identType += " "
+			if len(t.Results.List) > 1 {
+				identType += "("
+			}
+			for idx, param := range t.Results.List {
+				identType += tr.resolveType(param.Type)
+				if idx+1 < len(t.Params.List) {
+					identType += ","
+				}
+			}
+			if len(t.Results.List) > 1 {
+				identType += ")"
+			}
+		}
+	case *ast.StructType:
+		identType += "struct{"
+		for idx, field := range t.Fields.List {
+			identType += " "
+			for nameIdx, name := range field.Names {
+				identType += name.String() + " "
+				if nameIdx+1 < len(field.Names) {
+					identType += ","
+				}
+			}
+			identType += tr.resolveType(field.Type) + " "
+			if idx+1 < len(t.Fields.List) {
+				identType += ","
+			}
+		}
+		identType += "}"
+	case *ast.ChanType:
+		switch t.Dir {
+		case ast.SEND:
+			identType += "chan<- "
+		case ast.RECV:
+			identType += "<-chan "
+		default:
+			identType += "chan "
+		}
+		identType += tr.resolveType(t.Value)
+	case *ast.InterfaceType:
+		identType += "interface{"
+		for idx, method := range t.Methods.List {
+			identType += " "
+			for nameIdx, name := range method.Names {
+				// TODO inheritted interfaces
+				identType += name.String() + " "
+				if nameIdx+1 < len(method.Names) {
+					identType += ","
+				}
+			}
+			identType += tr.resolveType(method.Type) + " "
+			if idx+1 < len(t.Methods.List) {
+				identType += ","
+			}
+		}
+		identType += "}"
+	default:
+		panic(fmt.Sprintf("Not Implemented Type %T", t))
+	}
+	return identType
 }
