@@ -40,7 +40,11 @@ func FindMod(startFile string) (info ModInfo, err error) {
 				ModuleName: moduleName,
 			}, nil
 		}
-		dir = path.Dir(dir)
+		if dir == "/" {
+			dir = rootDir
+		} else {
+			dir = path.Dir(dir)
+		}
 	}
 
 	return ModInfo{}, fmt.Errorf("module file %s not found", modName)

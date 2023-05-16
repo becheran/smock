@@ -13,9 +13,9 @@ import (
 func TestFindModNoFile(t *testing.T) {
 	root := t.TempDir()
 	path := root + "/foo/bar/"
-	gomod.RootDir = root
+	*gomod.RootDir = root
 
-	require.Nil(t, os.MkdirAll(path, os.ModeDir))
+	require.Nil(t, os.MkdirAll(path, os.ModePerm))
 
 	info, err := gomod.FindMod(path)
 	assert.Empty(t, info)
@@ -25,9 +25,9 @@ func TestFindModNoFile(t *testing.T) {
 func TestFindModInvalid(t *testing.T) {
 	root := t.TempDir()
 	path := root + "/foo/bar/"
-	gomod.RootDir = root
+	*gomod.RootDir = root
 
-	require.Nil(t, os.MkdirAll(path, os.ModeDir))
+	require.Nil(t, os.MkdirAll(path, os.ModePerm))
 	require.Nil(t, os.WriteFile(root+"/foo/go.mod", []byte{}, os.ModePerm))
 
 	info, err := gomod.FindMod(path)
@@ -38,9 +38,9 @@ func TestFindModInvalid(t *testing.T) {
 func TestFindMod(t *testing.T) {
 	root := t.TempDir()
 	p := root + "/foo/bar/"
-	gomod.RootDir = root
+	*gomod.RootDir = root
 
-	require.Nil(t, os.MkdirAll(p, os.ModeDir))
+	require.Nil(t, os.MkdirAll(p, os.ModePerm))
 	require.Nil(t, os.WriteFile(p+"go.mod", []byte(`module github.com/becheran/smock
 
 go 1.20
