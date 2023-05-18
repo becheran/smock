@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"testing"
 
+	"github.com/becheran/smock/model"
 	"github.com/becheran/smock/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,8 @@ var X = f(3.14)*2 + c
 // Comment
 type MyInterface interface {
 	other.Inter
-	foo(x other.Type, bar, baz string) (o other.Other, oo map[string]SamePackage)
+	Foo(x other.Type, bar, baz string) (o other.Other, oo map[string]SamePackage)
+	unexported() int
 }
 `
 
@@ -33,23 +35,24 @@ type MyInterface other.Other`
 		src         string
 		line        int
 		errContains string
-		res         parse.InterfaceResult
+		res         model.InterfaceResult
 	}{
-		{src1, 1, "unexpected identifier", parse.InterfaceResult{}},
-		{src1, 18, "interface not found", parse.InterfaceResult{}},
+		{src1, 1, "unexpected identifier", model.InterfaceResult{}},
+		{src1, 18, "interface not found", model.InterfaceResult{}},
 
-		{src1, 5, "", parse.InterfaceResult{
+		{src1, 5, "", model.InterfaceResult{
 			Name:       "MyInterface",
-			References: []parse.Reference{{PackageID: "other", Name: "Inter"}},
-			Methods: []parse.Method{{
-				Params:  []parse.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}},
-				Results: []parse.Ident{{Name: "o", Type: "other.Other"}, {Name: "oo", Type: "map[string]p.SamePackage"}},
+			References: []model.Reference{{PackageID: "other", Name: "Inter"}},
+			Methods: []model.Method{{
+				Name:    "Foo",
+				Params:  []model.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}},
+				Results: []model.Ident{{Name: "o", Type: "other.Other"}, {Name: "oo", Type: "map[string]p.SamePackage"}},
 			}},
 		}},
 
-		{src2, 2, "", parse.InterfaceResult{
+		{src2, 2, "", model.InterfaceResult{
 			Name:       "MyInterface",
-			References: []parse.Reference{{PackageID: "other", Name: "Other"}},
+			References: []model.Reference{{PackageID: "other", Name: "Other"}},
 		}},
 	}
 	for idx, s := range suite {

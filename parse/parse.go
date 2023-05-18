@@ -4,31 +4,11 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+
+	"github.com/becheran/smock/model"
 )
 
-type Reference struct {
-	PackageID string // Empty if part of this package
-	Name      string // Name of referenced object
-}
-
-type Ident struct {
-	Name string
-	Type string
-}
-
-type Method struct {
-	TypeParams []Ident
-	Params     []Ident
-	Results    []Ident
-}
-
-type InterfaceResult struct {
-	Name       string
-	References []Reference
-	Methods    []Method
-}
-
-func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i InterfaceResult, err error) {
+func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model.InterfaceResult, err error) {
 	packageName := file.Name.Name
 
 	for _, decl := range file.Decls {
@@ -40,84 +20,93 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i Inter
 
 		x, ok := decl.(*ast.GenDecl)
 		if !ok {
-			return InterfaceResult{}, fmt.Errorf("unexpected decl type %T", decl)
+			return model.InterfaceResult{}, fmt.Errorf("unexpected decl type %T", decl)
 		}
 
 		if x.Tok != token.TYPE {
-			return InterfaceResult{}, fmt.Errorf("unexpected identifier %T", x.Tok)
+			return model.InterfaceResult{}, fmt.Errorf("unexpected identifier %T", x.Tok)
 		}
 		if len(x.Specs) != 1 {
-			return InterfaceResult{}, fmt.Errorf("expected one spec, but got %d", len(x.Specs))
+			return model.InterfaceResult{}, fmt.Errorf("expected one spec, but got %d", len(x.Specs))
 		}
 		ts, ok := x.Specs[0].(*ast.TypeSpec)
 		if !ok {
-			return InterfaceResult{}, fmt.Errorf("expected type spec, but got %T", x.Specs[0])
+			return model.InterfaceResult{}, fmt.Errorf("expected type spec, but got %T", x.Specs[0])
 		}
 		if ts.Name == nil {
-			return InterfaceResult{}, fmt.Errorf("expected ts name not to be nil")
+			return model.InterfaceResult{}, fmt.Errorf("expected ts name not to be nil")
 		}
 		name := ts.Name.Name
 
 		interfaceType, ok := ts.Type.(*ast.InterfaceType)
 		if !ok {
 			if ref := expToReference(ts.Type); ref != nil {
-				return InterfaceResult{Name: name, References: []Reference{*ref}}, nil
+				return model.InterfaceResult{Name: name, References: []model.Reference{*ref}}, nil
 			}
-			return InterfaceResult{}, fmt.Errorf("unexpected type %T", ts.Type)
+			return model.InterfaceResult{}, fmt.Errorf("unexpected type %T", ts.Type)
 		}
 		// TODO interfaceType.Incomplete?
 
-		references := []Reference{}
-		methods := []Method{}
+		references := []model.Reference{}
+		methods := []model.Method{}
 		if interfaceType.Methods != nil {
 			for _, it := range interfaceType.Methods.List {
 				if ref := expToReference(it.Type); ref != nil {
 					references = append(references, *ref)
-				} else {
-					switch meth := it.Type.(type) {
-					case *ast.FuncType:
-						methods = append(methods, Method{
-							TypeParams: fieldListToIdent(meth.TypeParams, packageName),
-							Params:     fieldListToIdent(meth.Params, packageName),
-							Results:    fieldListToIdent(meth.Results, packageName),
-						})
-					default:
-						return InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
-					}
+					continue
+				}
+				if len(it.Names) != 1 {
+					continue
+				}
+				name := it.Names[0]
+				if !name.IsExported() {
+					continue
+				}
+				switch meth := it.Type.(type) {
+				case *ast.FuncType:
+					// TODO filter imports based on used types
+					methods = append(methods, model.Method{
+						Name:       name.String(),
+						TypeParams: fieldListToIdent(meth.TypeParams, packageName),
+						Params:     fieldListToIdent(meth.Params, packageName),
+						Results:    fieldListToIdent(meth.Results, packageName),
+					})
+				default:
+					return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
 				}
 			}
 		}
 
-		return InterfaceResult{
+		return model.InterfaceResult{
 			Name:       name,
 			Methods:    methods,
 			References: references,
 		}, nil
 	}
 
-	return InterfaceResult{}, fmt.Errorf("interface not found")
+	return model.InterfaceResult{}, fmt.Errorf("interface not found")
 }
 
-func expToReference(exp ast.Expr) *Reference {
+func expToReference(exp ast.Expr) *model.Reference {
 	switch meth := exp.(type) {
 	case *ast.SelectorExpr:
 		packageID := ""
 		if xIdent, ok := meth.X.(*ast.Ident); ok {
 			packageID = xIdent.String()
 		}
-		return &Reference{
+		return &model.Reference{
 			PackageID: packageID,
 			Name:      meth.Sel.String(),
 		}
 	case *ast.Ident:
-		return &Reference{
+		return &model.Reference{
 			Name: meth.String(),
 		}
 	}
 	return nil
 }
 
-func fieldListToIdent(list *ast.FieldList, packageName string) (res []Ident) {
+func fieldListToIdent(list *ast.FieldList, packageName string) (res []model.Ident) {
 	if list == nil {
 		return
 	}
@@ -126,10 +115,10 @@ func fieldListToIdent(list *ast.FieldList, packageName string) (res []Ident) {
 		identType := tr.resolveType(l.Type)
 
 		if len(l.Names) == 0 {
-			res = append(res, Ident{Type: identType})
+			res = append(res, model.Ident{Type: identType})
 		} else {
 			for _, name := range l.Names {
-				res = append(res, Ident{Name: name.Name, Type: identType})
+				res = append(res, model.Ident{Name: name.Name, Type: identType})
 			}
 		}
 
