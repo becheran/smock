@@ -9,7 +9,7 @@ import (
 )
 
 func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model.InterfaceResult, err error) {
-	packageName := file.Name.Name
+	i.PackageName = file.Name.Name
 
 	for _, decl := range file.Decls {
 		line := fset.Position(decl.Pos()).Line
@@ -36,52 +36,49 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 		if ts.Name == nil {
 			return model.InterfaceResult{}, fmt.Errorf("expected ts name not to be nil")
 		}
-		name := ts.Name.Name
+		i.Name = ts.Name.Name
 
 		interfaceType, ok := ts.Type.(*ast.InterfaceType)
 		if !ok {
 			if ref := expToReference(ts.Type); ref != nil {
-				return model.InterfaceResult{Name: name, References: []model.Reference{*ref}}, nil
+				i.References = []model.Reference{*ref}
+				return i, nil
 			}
 			return model.InterfaceResult{}, fmt.Errorf("unexpected type %T", ts.Type)
 		}
 		// TODO interfaceType.Incomplete?
 
-		references := []model.Reference{}
-		methods := []model.Method{}
-		if interfaceType.Methods != nil {
-			for _, it := range interfaceType.Methods.List {
-				if ref := expToReference(it.Type); ref != nil {
-					references = append(references, *ref)
-					continue
-				}
-				if len(it.Names) != 1 {
-					continue
-				}
-				name := it.Names[0]
-				if !name.IsExported() {
-					continue
-				}
-				switch meth := it.Type.(type) {
-				case *ast.FuncType:
-					// TODO filter imports based on used types
-					methods = append(methods, model.Method{
-						Name:       name.String(),
-						TypeParams: fieldListToIdent(meth.TypeParams, packageName),
-						Params:     fieldListToIdent(meth.Params, packageName),
-						Results:    fieldListToIdent(meth.Results, packageName),
-					})
-				default:
-					return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
-				}
+		if interfaceType.Methods == nil {
+			return model.InterfaceResult{}, fmt.Errorf("unexpected empty interface")
+		}
+
+		for _, it := range interfaceType.Methods.List {
+			if ref := expToReference(it.Type); ref != nil {
+				i.References = append(i.References, *ref)
+				continue
+			}
+			if len(it.Names) != 1 {
+				continue
+			}
+			name := it.Names[0]
+			if !name.IsExported() {
+				continue
+			}
+			switch meth := it.Type.(type) {
+			case *ast.FuncType:
+				// TODO filter imports based on used types
+				i.Methods = append(i.Methods, model.Method{
+					Name:       name.String(),
+					TypeParams: fieldListToIdent(meth.TypeParams, i.PackageName),
+					Params:     fieldListToIdent(meth.Params, i.PackageName),
+					Results:    fieldListToIdent(meth.Results, i.PackageName),
+				})
+			default:
+				return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
 			}
 		}
 
-		return model.InterfaceResult{
-			Name:       name,
-			Methods:    methods,
-			References: references,
-		}, nil
+		return i, nil
 	}
 
 	return model.InterfaceResult{}, fmt.Errorf("interface not found")

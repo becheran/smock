@@ -41,8 +41,9 @@ type MyInterface other.Other`
 		{src1, 18, "interface not found", model.InterfaceResult{}},
 
 		{src1, 5, "", model.InterfaceResult{
-			Name:       "MyInterface",
-			References: []model.Reference{{PackageID: "other", Name: "Inter"}},
+			Name:        "MyInterface",
+			PackageName: "p",
+			References:  []model.Reference{{PackageID: "other", Name: "Inter"}},
 			Methods: []model.Method{{
 				Name:    "Foo",
 				Params:  []model.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}},
@@ -51,8 +52,9 @@ type MyInterface other.Other`
 		}},
 
 		{src2, 2, "", model.InterfaceResult{
-			Name:       "MyInterface",
-			References: []model.Reference{{PackageID: "other", Name: "Other"}},
+			Name:        "MyInterface",
+			PackageName: "p",
+			References:  []model.Reference{{PackageID: "other", Name: "Other"}},
 		}},
 	}
 	for idx, s := range suite {

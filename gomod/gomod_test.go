@@ -1,6 +1,7 @@
 package gomod_test
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -58,4 +59,21 @@ require (
 	assert.Nil(t, err)
 	assert.Equal(t, "github.com/becheran/smock", info.ModuleName)
 	assert.Equal(t, path.Dir(p), info.Path)
+}
+
+func TestModImportPath(t *testing.T) {
+	var suite = []struct {
+		info   gomod.ModInfo
+		path   string
+		result string
+	}{
+		{gomod.ModInfo{ModuleName: "github.com/becheran/smock", Path: "/foo/bar"}, "/foo/bar", "github.com/becheran/smock"},
+		{gomod.ModInfo{ModuleName: "github.com/becheran/smock", Path: "/foo/bar"}, "/foo/bar/baz", "github.com/becheran/smock/baz"},
+		{gomod.ModInfo{ModuleName: "github.com/becheran/smock", Path: "C:\\foo\\bar\\smock"}, "C:\\foo\\bar\\smock/baz", "github.com/becheran/smock/baz"},
+	}
+	for id, test := range suite {
+		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
+			assert.Equal(t, test.result, gomod.ModImportPath(&test.info, test.path))
+		})
+	}
 }

@@ -49,3 +49,11 @@ func FindMod(startFile string) (info ModInfo, err error) {
 
 	return ModInfo{}, fmt.Errorf("module file %s not found", modName)
 }
+
+// ModImportPath returns the go import path for the given file path.
+func ModImportPath(modInfo *ModInfo, path string) string {
+	modInfoPathUnix := strings.ReplaceAll(modInfo.Path, "\\", "/")
+	pathUnix := strings.ReplaceAll(path, "\\", "/")
+	subPath := strings.TrimPrefix(pathUnix, modInfoPathUnix)
+	return fmt.Sprintf("%s%s", modInfo.ModuleName, subPath)
+}
