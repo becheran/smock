@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get working directory. %s", err)
 	}
-	file := fmt.Sprintf("%s/%s.go", wd, fileName)
+	file := fmt.Sprintf("%s/%s", wd, fileName)
 
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, file, nil, 0)
@@ -48,16 +48,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to find module. %s", err)
 	}
-	path := gomod.ModImportPath(&modInfo, path.Dir(file))
+	importPath := modInfo.ModImportPath(path.Dir(file))
 
 	// Add own package as import
-	i.Imports = append(i.Imports, model.Import{Path: path})
+	i.Imports = append(i.Imports, model.Import{Path: importPath})
 
 	m, err := generate.GenerateMock(i)
 	if err != nil {
 		log.Fatalf("Failed to generate mock. %s", err)
 	}
 
-	// TODO: Write to file
-	fmt.Println(m)
+	mockFilePath := modInfo.MockFilePath(file)
+	if err := os.MkdirAll(path.Dir(mockFilePath), os.ModePerm); err != nil {
+		log.Fatalf("Failed to create directory '%s'. %s", path.Dir(mockFilePath), err)
+	}
+	if err := os.WriteFile(mockFilePath, []byte(m), 0644); err != nil {
+		log.Fatalf("Failed to write mock file '%s'. %s", mockFilePath, err)
+	}
 }

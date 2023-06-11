@@ -3,7 +3,6 @@ package gomod_test
 import (
 	"fmt"
 	"os"
-	"path"
 	"testing"
 
 	"github.com/becheran/smock/gomod"
@@ -38,11 +37,11 @@ func TestFindModInvalid(t *testing.T) {
 
 func TestFindMod(t *testing.T) {
 	root := t.TempDir()
-	p := root + "/foo/bar/"
+	p := root + "/foo/bar/myfile.go"
 	*gomod.RootDir = root
 
 	require.Nil(t, os.MkdirAll(p, os.ModePerm))
-	require.Nil(t, os.WriteFile(p+"go.mod", []byte(`module github.com/becheran/smock
+	require.Nil(t, os.WriteFile(root+"/gO.mod", []byte(`module github.com/becheran/smock
 
 go 1.20
 
@@ -58,7 +57,7 @@ require (
 	info, err := gomod.FindMod(p)
 	assert.Nil(t, err)
 	assert.Equal(t, "github.com/becheran/smock", info.ModuleName)
-	assert.Equal(t, path.Dir(p), info.Path)
+	assert.Equal(t, root, info.Path)
 }
 
 func TestModImportPath(t *testing.T) {
@@ -73,7 +72,7 @@ func TestModImportPath(t *testing.T) {
 	}
 	for id, test := range suite {
 		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
-			assert.Equal(t, test.result, gomod.ModImportPath(&test.info, test.path))
+			assert.Equal(t, gomod.PathToUnix(test.result), test.info.ModImportPath(test.path))
 		})
 	}
 }

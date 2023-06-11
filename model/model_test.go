@@ -15,6 +15,8 @@ func TestImportName(t *testing.T) {
 	assert.Equal(t, "bar", model.Import{Name: "bar", Path: "foo/other"}.ImportName())
 	assert.Equal(t, "bar", model.Import{Path: "foo/bar"}.ImportName())
 	assert.Equal(t, "bar", model.Import{Path: "bar"}.ImportName())
+	assert.Equal(t, "bar", model.Import{Path: "foo/go-bar"}.ImportName())
+	assert.Equal(t, "bar", model.Import{Path: "foo/foo-bar"}.ImportName())
 }
 
 func TestImportString(t *testing.T) {

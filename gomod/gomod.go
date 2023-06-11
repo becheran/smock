@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/becheran/smock/model"
 )
 
 var rootDir = "."
@@ -18,8 +20,8 @@ type ModInfo struct {
 }
 
 func FindMod(startFile string) (info ModInfo, err error) {
-	dir := path.Dir(startFile)
-	for dir != rootDir {
+	dir := path.Dir(PathToUnix(startFile))
+	for {
 		modFile := path.Join(dir, modName)
 		if _, existsErr := os.Stat(modFile); existsErr == nil {
 			file, err := os.Open(modFile)
@@ -40,20 +42,28 @@ func FindMod(startFile string) (info ModInfo, err error) {
 				ModuleName: moduleName,
 			}, nil
 		}
-		if dir == "/" {
-			dir = rootDir
-		} else {
-			dir = path.Dir(dir)
+		if dir == "/" || dir == "" || dir == "." || dir == rootDir {
+			return ModInfo{}, fmt.Errorf("module file '%s' for path '%s' not found", modName, startFile)
 		}
+		dir = path.Dir(dir)
 	}
-
-	return ModInfo{}, fmt.Errorf("module file %s not found", modName)
 }
 
 // ModImportPath returns the go import path for the given file path.
-func ModImportPath(modInfo *ModInfo, path string) string {
-	modInfoPathUnix := strings.ReplaceAll(modInfo.Path, "\\", "/")
-	pathUnix := strings.ReplaceAll(path, "\\", "/")
-	subPath := strings.TrimPrefix(pathUnix, modInfoPathUnix)
+func (modInfo ModInfo) ModImportPath(dir string) string {
+	subPath := strings.TrimPrefix(PathToUnix(dir), PathToUnix(modInfo.Path))
 	return fmt.Sprintf("%s%s", modInfo.ModuleName, subPath)
+}
+
+// MockDir returns the file used to for the generated mocks.
+func (modInfo ModInfo) MockFilePath(filePath string) string {
+	modInfoPathUnix := PathToUnix(modInfo.Path)
+	subPath := strings.TrimPrefix(PathToUnix(filePath), modInfoPathUnix)
+	goIdx := strings.LastIndex(subPath, ".go")
+	subPath = subPath[:goIdx] + model.PackageSuffix + subPath[goIdx:]
+	return fmt.Sprintf("%s/%s%s", modInfoPathUnix, model.MockDir, subPath)
+}
+
+func PathToUnix(p string) string {
+	return strings.ReplaceAll(p, "\\", "/")
 }

@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+const (
+	MockPrefix    = "Mock"
+	PackageSuffix = "_mock"
+	MockDir       = "mocks"
+)
+
 type Reference struct {
 	PackageID string // Empty if part of this package
 	Name      string // Name of referenced object
@@ -77,7 +83,11 @@ func (i Import) ImportName() string {
 	if idx < 0 {
 		return i.Path
 	}
-	return i.Path[idx+1:]
+	name := i.Path[idx+1:]
+	if idx := strings.LastIndex(name, "-"); idx >= 0 {
+		return name[idx+1:]
+	}
+	return name
 }
 
 func (i Import) String() string {
