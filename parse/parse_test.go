@@ -12,24 +12,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseInterface(t *testing.T) {
-	const (
-		src1 = `package p
+const (
+	src1 = `package p
+
+import (
+	other "github.com/foo/bar"
+	"io"
+)
 
 var X = f(3.14)*2 + c
 
 // Comment
 type MyInterface interface {
-	other.Inter
-	Foo(x other.Type, bar, baz string) (o other.Other, oo map[string]SamePackage)
+	Foo(x other.Type, bar, baz string, r io.Reader) (o other.Other, oo map[string]SamePackage)
 	unexported() int
 }
 `
 
-		src2 = `package p
+	src2 = `package p
+
+import (
+	"github.com/foo/bar/other"
+)
 
 type MyInterface other.Other`
-	)
+)
+
+func TestParseInterface(t *testing.T) {
 
 	var suite = []struct {
 		src         string
@@ -40,22 +49,19 @@ type MyInterface other.Other`
 		{src1, 1, "unexpected identifier", model.InterfaceResult{}},
 		{src1, 18, "interface not found", model.InterfaceResult{}},
 
-		{src1, 5, "", model.InterfaceResult{
+		{src1, 8, "", model.InterfaceResult{
 			Name:        "MyInterface",
 			PackageName: "p",
-			References:  []model.Reference{{PackageID: "other", Name: "Inter"}},
 			Methods: []model.Method{{
 				Name:    "Foo",
-				Params:  []model.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}},
+				Params:  []model.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "string"}, {Name: "baz", Type: "string"}, {Name: "r", Type: "io.Reader"}},
 				Results: []model.Ident{{Name: "o", Type: "other.Other"}, {Name: "oo", Type: "map[string]p.SamePackage"}},
 			}},
-		}},
-
-		{src2, 2, "", model.InterfaceResult{
-			Name:        "MyInterface",
-			PackageName: "p",
-			References:  []model.Reference{{PackageID: "other", Name: "Other"}},
-		}},
+			Imports: []model.Import{
+				{Path: "io"},
+				{Name: "other", Path: "github.com/foo/bar"},
+			}}},
+		{src2, 5, "not yet implemented", model.InterfaceResult{}},
 	}
 	for idx, s := range suite {
 		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {

@@ -57,7 +57,7 @@ require (
 	info, err := gomod.FindMod(p)
 	assert.Nil(t, err)
 	assert.Equal(t, "github.com/becheran/smock", info.ModuleName)
-	assert.Equal(t, root, info.Path)
+	assert.Equal(t, gomod.PathToUnix(root), info.Path)
 }
 
 func TestModImportPath(t *testing.T) {

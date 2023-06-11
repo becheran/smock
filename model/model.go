@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"go/ast"
 	"strings"
 )
 
@@ -23,29 +24,36 @@ type Ident struct {
 
 type IdentList []Ident
 
-func (i IdentList) IdentWithTypeString() (res string) {
+type IdentType string
+
+const (
+	IdentTypeInput  IdentType = "i"
+	IdentTypeResult IdentType = "r"
+)
+
+func (i IdentList) IdentWithTypeString(identPrefix IdentType) (res string) {
 	for idx, ident := range i {
 		name := ident.Name
 		if name == "" {
-			name = fmt.Sprintf("r%d", idx)
+			name = fmt.Sprintf("%s%d", identPrefix, idx)
 		}
 		res += fmt.Sprintf("%s %s", name, ident.Type)
 		if idx+1 < len(i) {
-			res += ","
+			res += ", "
 		}
 	}
 	return
 }
 
-func (i IdentList) IdentString() (res string) {
+func (i IdentList) IdentString(identPrefix IdentType) (res string) {
 	for idx, ident := range i {
 		name := ident.Name
 		if name == "" {
-			name = fmt.Sprintf("r%d", idx)
+			name = fmt.Sprintf("%s%d", identPrefix, idx)
 		}
 		res += name
 		if idx+1 < len(i) {
-			res += ","
+			res += ", "
 		}
 	}
 	return
@@ -59,12 +67,10 @@ type Method struct {
 }
 
 func (m Method) Signature() string {
-	// TODO types?
-	// TODO TEST
-	args := fmt.Sprintf("(%s)", m.Params.IdentWithTypeString())
+	args := fmt.Sprintf("(%s)", m.Params.IdentWithTypeString(IdentTypeInput))
 	retStr := ""
 	if len(m.Results) > 0 {
-		retStr = fmt.Sprintf(" (%s)", m.Results.IdentWithTypeString())
+		retStr = fmt.Sprintf(" (%s)", m.Results.IdentWithTypeString(IdentTypeResult))
 
 	}
 	return fmt.Sprintf("%s%s", args, retStr)
@@ -73,6 +79,17 @@ func (m Method) Signature() string {
 type Import struct {
 	Name string
 	Path string
+}
+
+func ImportFromAst(spec *ast.ImportSpec) Import {
+	name := ""
+	if spec.Name != nil {
+		name = strings.Trim(spec.Name.Name, `"`)
+	}
+	return Import{
+		Name: name,
+		Path: strings.Trim(spec.Path.Value, `"`),
+	}
 }
 
 func (i Import) ImportName() string {
@@ -98,7 +115,6 @@ type InterfaceResult struct {
 	Name        string
 	PackageName string
 	Imports     []Import
-	References  []Reference
 	Methods     []Method
 }
 

@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	// TODO logging
 	if os.Getenv("GOLINE") == "" {
 		log.Fatal("GOLINE environment variable must be set")
 	}

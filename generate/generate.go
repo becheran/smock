@@ -7,9 +7,6 @@ import (
 )
 
 func GenerateMock(res model.InterfaceResult) (mock string, err error) {
-	if len(res.References) > 0 {
-		return "", fmt.Errorf("references must be resolved before generating mock")
-	}
 	if err := res.ValidateReadyForGenerate(); err != nil {
 		return "", err
 	}
@@ -74,11 +71,11 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		if len(f.Results) > 0 {
 			retStm = "return "
 		}
-		w.P("%sm.f%s(%s)", retStm, f.Name, f.Params.IdentString())
+		w.P("%sm.f%s(%s)", retStm, f.Name, f.Params.IdentString(model.IdentTypeInput))
 		w.EndIdent()
 		w.P("} else {")
 		w.Ident()
-		w.P(`m.unexpectedCall("%s", "")`, f.Name) // TODO ARGS?
+		w.P(`m.unexpectedCall("%s", "%s")`, f.Name, f.Params.IdentWithTypeString(model.IdentTypeInput))
 		w.P(`return`)
 		w.EndIdent()
 		w.P("}")
@@ -132,9 +129,9 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		w.P("")
 
 		if len(f.Results) > 0 {
-			w.P("func (f *%s) Return(%s) {", funcStruct, f.Results.IdentWithTypeString())
+			w.P("func (f *%s) Return(%s) {", funcStruct, f.Results.IdentWithTypeString(model.IdentTypeResult))
 			w.Ident()
-			w.P("f.m.f%s = func%s { return %s }", f.Name, f.Signature(), f.Results.IdentString())
+			w.P("f.m.f%s = func%s { return %s }", f.Name, f.Signature(), f.Results.IdentString(model.IdentTypeResult))
 			w.EndIdent()
 			w.P("}")
 			w.P("")
