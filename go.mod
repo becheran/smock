@@ -2,7 +2,10 @@ module github.com/becheran/smock
 
 go 1.20
 
-require github.com/stretchr/testify v1.8.2
+require (
+	github.com/stretchr/testify v1.8.2
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

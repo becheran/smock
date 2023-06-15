@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	MockPrefix    = "Mock"
-	PackageSuffix = "_mock"
-	MockDir       = "mocks"
+	MockPrefix        = "Mock"
+	MockPackageSuffix = "_mock"
+	MockDir           = "mocks"
 )
 
 type Reference struct {

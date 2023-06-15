@@ -5,11 +5,15 @@ import (
 	"go/ast"
 	"go/token"
 
+	"github.com/becheran/smock/logger"
 	"github.com/becheran/smock/model"
+	"golang.org/x/exp/slices"
 )
 
 func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model.InterfaceResult, err error) {
 	i.PackageName = file.Name.Name
+
+	logger.Printf("Parse interface in file '%s:%d'", file.Name, startLine)
 
 	for _, decl := range file.Decls {
 		line := fset.Position(decl.Pos()).Line
@@ -37,6 +41,7 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			return model.InterfaceResult{}, fmt.Errorf("expected ts name not to be nil")
 		}
 		i.Name = ts.Name.Name
+		logger.Printf("found interface '%s'", i.Name)
 
 		interfaceType, ok := ts.Type.(*ast.InterfaceType)
 		if !ok {
@@ -62,6 +67,7 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			if !name.IsExported() {
 				continue
 			}
+			logger.Printf("found exported method '%s'", name)
 			switch meth := it.Type.(type) {
 			case *ast.FuncType:
 				method := model.Method{
@@ -77,6 +83,8 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 		}
 
 		for usedImport := range usedImports {
+			logger.Printf("Add used import '%s' to result", usedImport)
+
 			if usedImport == i.PackageName {
 				continue
 			}
@@ -93,6 +101,7 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			}
 			i.Imports = append(i.Imports, *foundImport)
 		}
+		slices.SortFunc(i.Imports, func(a, b model.Import) bool { return a.ImportName() < b.ImportName() })
 
 		return i, nil
 	}
