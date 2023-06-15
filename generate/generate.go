@@ -15,7 +15,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	}
 
 	mockedStructName := fmt.Sprintf("%s%s", model.MockPrefix, res.Name)
-	expectStructName := mockedStructName + "Expect"
+	whenStructName := mockedStructName + "When"
 
 	w := newWriter()
 
@@ -88,9 +88,9 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		w.P("")
 	}
 
-	w.P("func (m *%s) EXPECT() *%s {", mockedStructName, expectStructName)
+	w.P("func (m *%s) WHEN() *%s {", mockedStructName, whenStructName)
 	w.Ident()
-	w.P("return &%s{", expectStructName)
+	w.P("return &%s{", whenStructName)
 	w.Ident()
 	w.P("m: m,")
 	w.EndIdent()
@@ -107,7 +107,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	w.P("}")
 	w.P("")
 
-	w.P("type %s struct {", expectStructName)
+	w.P("type %s struct {", whenStructName)
 	w.Ident()
 	w.P("m *%s", mockedStructName)
 	w.EndIdent()
@@ -117,7 +117,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	for _, f := range res.Methods {
 		funcStruct := fmt.Sprintf("%s%sFunc", mockedStructName, f.Name)
 
-		w.P("func (mh *%s) %s() *%s {", expectStructName, f.Name, funcStruct)
+		w.P("func (mh *%s) %s() *%s {", whenStructName, f.Name, funcStruct)
 		w.Ident()
 		w.P("mh.m.f%s = func%s { return }", f.Name, f.Signature())
 		w.P("return &%s{m: mh.m}", funcStruct)

@@ -45,8 +45,8 @@ func (m *MockHandler) Target() (r0 int) {
 	}
 }
 
-func (m *MockHandler) EXPECT() *MockHandlerExpect {
-	return &MockHandlerExpect{
+func (m *MockHandler) WHEN() *MockHandlerWhen {
+	return &MockHandlerWhen{
 		m: m,
 	}
 }
@@ -56,11 +56,11 @@ func (m *MockHandler) unexpectedCall(method, args string) {
 	m.t.Fatalf(` + "`" + `Unexpected call to MockHandler.%s(%s)` + "`" + `, method, args)
 }
 
-type MockHandlerExpect struct {
+type MockHandlerWhen struct {
 	m *MockHandler
 }
 
-func (mh *MockHandlerExpect) Target() *MockHandlerTargetFunc {
+func (mh *MockHandlerWhen) Target() *MockHandlerTargetFunc {
 	mh.m.fTarget = func() (r0 int) { return }
 	return &MockHandlerTargetFunc{m: mh.m}
 }
