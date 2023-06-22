@@ -41,7 +41,7 @@ func TestFindMod(t *testing.T) {
 	*gomod.RootDir = root
 
 	require.Nil(t, os.MkdirAll(p, os.ModePerm))
-	require.Nil(t, os.WriteFile(root+"/gO.mod", []byte(`module github.com/becheran/smock
+	require.Nil(t, os.WriteFile(root+"/go.mod", []byte(`module github.com/becheran/smock
 
 go 1.20
 
