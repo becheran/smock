@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/becheran/smock/generate"
@@ -18,10 +19,20 @@ import (
 )
 
 func main() {
-	debug := false
-	flag.BoolVar(&debug, "debug", false, "print debug information")
+	dbg := false
+	version := false
+	flag.BoolVar(&dbg, "debug", false, "print debug information")
+	flag.BoolVar(&version, "v", false, "print smock version")
 	flag.Parse()
-	if debug {
+	if version {
+		v := "unkown"
+		if info, found := debug.ReadBuildInfo(); found {
+			v = info.Main.Version
+		}
+		fmt.Println(v)
+		return
+	}
+	if dbg {
 		logger.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 		logger.Printf("Debug mode enabled\n")
 	}
