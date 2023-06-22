@@ -9,5 +9,7 @@ import (
 var Logger *log.Logger = log.New(io.Discard, "", 0)
 
 func Printf(format string, v ...interface{}) {
-	Logger.Output(2, fmt.Sprintf(format, v...))
+	if err := Logger.Output(2, fmt.Sprintf(format, v...)); err != nil {
+		panic(err)
+	}
 }
