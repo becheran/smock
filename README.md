@@ -14,7 +14,7 @@
 
 Simple and fast mock generator for golang
 
-![Logo](./docs/gopher.png)
+![Logo](./docs/logo.png)
 
 ## Features
 
@@ -24,13 +24,13 @@ There are at least two other popular mock generators that exist for *go* right n
 
 So why "yet another mock generator"? Or in other words "what does *smock* offer that *mockgen* or *mockery* doesn't?"
 
-It does not offer any features which are not yet covered by the existing libraries, but it simplifies the process of mocking *interfaces* manually without requiring any additional libraries or complex assertions. It does the most basic thing of allowing to do or assert arbitrary behavior of a interface which is passed to a function under test.
+The intention of *smock* is to simplify the process of manually mocking interfaces. The tool focused on the following features:
 
-|| smock | mockery | testify
-|-|-|-|-|
-| Requires additional library | ❌ | ✅ |✅
-| Original types on mocked functions | ✅ | ❌ |❌
-| Complex assertions and tests of mock| ❌ | ✅ |✅
+- No additional libraries required
+- Work with `go:generate` annotation on interfaces without any configuration
+- Keep type information when writing `Do` or `Return` blocks of mock object
+- Fast parsing and generation
+- No complex builtin assertion capabilities. Though, allow them to be added if needed for specific tests
 
 ## Getting Started
 
@@ -49,15 +49,17 @@ type MockMeIfYouCan interface {
 }
 ```
 
-Run the following command to generate mocks for all annotated interfaces:
+Run the go generate command in the module root directory next to the `go.mod` file to generate mocks for all annotated interfaces:
 
 ``` sh
 go generate ./...
 ```
 
-All generated mocks will show up in the folder `mocks` of the module root next to the `go.mod` file. The import name for the generated mocks will be `<PackageNameOfInterface>_mock`.
+All generated mocks will appear in the folder `mocks` of the module root. The import name for the generated mocks will be `<PackageNameOfInterface>_mock`.
 
-The mocked interface can be used in unit tests. The mocks can act as all types of mocks as [martin fowler listed once](https://martinfowler.com/articles/mocksArentStubs.html).
+The mocked interface can be used in unit tests. They have an additional `WHEN` function to set behaviors for each exposed function of the interface. The mock can either `Do` something or `Return` fixed values when a function is called.
+
+The mocks can act like all types of mock objects as [martin fowler described once](https://martinfowler.com/articles/mocksArentStubs.html).
 
 ### Dummy
 
@@ -98,7 +100,7 @@ func TestMockMeIfYouCan(t *testing.T) {
 }
 ```
 
-### Mock
+### Mock or Fake
 
 Do and return arbitrary stuff when being called:
 
