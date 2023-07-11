@@ -55,7 +55,16 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			return model.InterfaceResult{}, fmt.Errorf("unexpected empty interface")
 		}
 
-		usedImports := make(map[string]struct{})
+		identResolver := identResolver{PackageName: i.PackageName, UsedImports: make(map[string]struct{})}
+		if ts.TypeParams != nil {
+			i.Types = identResolver.fieldListToIdent(ts.TypeParams.List)
+		}
+		generics := make(map[string]struct{})
+		for _, genType := range i.Types {
+			generics[genType.Name] = struct{}{}
+		}
+		identResolver.Generics = generics
+
 		for _, it := range interfaceType.Methods.List {
 			if ref := expToReference(it.Type); ref != nil {
 				return model.InterfaceResult{}, fmt.Errorf("references not yet implemented")
@@ -70,11 +79,17 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			logger.Printf("found exported method '%s'", name)
 			switch meth := it.Type.(type) {
 			case *ast.FuncType:
+				getList := func(list *ast.FieldList) []*ast.Field {
+					if list == nil {
+						return nil
+					}
+					return list.List
+				}
 				method := model.Method{
 					Name:       name.String(),
-					TypeParams: fieldListToIdent(meth.TypeParams, i.PackageName, usedImports),
-					Params:     fieldListToIdent(meth.Params, i.PackageName, usedImports),
-					Results:    fieldListToIdent(meth.Results, i.PackageName, usedImports),
+					TypeParams: identResolver.fieldListToIdent(getList(meth.TypeParams)),
+					Params:     identResolver.fieldListToIdent(getList(meth.Params)),
+					Results:    identResolver.fieldListToIdent(getList(meth.Results)),
 				}
 				i.Methods = append(i.Methods, method)
 			default:
@@ -82,7 +97,7 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			}
 		}
 
-		for usedImport := range usedImports {
+		for usedImport := range identResolver.UsedImports {
 			logger.Printf("Add used import '%s' to result", usedImport)
 
 			if usedImport == i.PackageName {
@@ -97,7 +112,7 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 				}
 			}
 			if foundImport == nil {
-				return model.InterfaceResult{}, fmt.Errorf("import %s not found", usedImport)
+				return model.InterfaceResult{}, fmt.Errorf("import '%s' not found", usedImport)
 			}
 			i.Imports = append(i.Imports, *foundImport)
 		}
@@ -128,14 +143,21 @@ func expToReference(exp ast.Expr) *model.Reference {
 	return nil
 }
 
-func fieldListToIdent(list *ast.FieldList, packageName string, usedImports map[string]struct{}) (res []model.Ident) {
+type identResolver struct {
+	PackageName string
+	UsedImports map[string]struct{}
+	Generics    map[string]struct{}
+}
+
+func (f *identResolver) fieldListToIdent(list []*ast.Field) (res []model.Ident) {
 	if list == nil {
 		return
 	}
-	for _, l := range list.List {
+	for _, l := range list {
 		tr := typeResolver{
-			PackageName: packageName,
-			UsedImports: usedImports,
+			PackageName: f.PackageName,
+			UsedImports: f.UsedImports,
+			Generics:    f.Generics,
 		}
 		identType := tr.resolveType(l.Type)
 
@@ -146,7 +168,6 @@ func fieldListToIdent(list *ast.FieldList, packageName string, usedImports map[s
 				res = append(res, model.Ident{Name: name.Name, Type: identType})
 			}
 		}
-
 	}
 	return
 }
@@ -154,7 +175,15 @@ func fieldListToIdent(list *ast.FieldList, packageName string, usedImports map[s
 type typeResolver struct {
 	PackageName string
 	UsedImports map[string]struct{}
-	// TODO generic types
+	Generics    map[string]struct{}
+}
+
+func (tr *typeResolver) isGenericIdentifier(id string) bool {
+	if tr.Generics == nil {
+		return false
+	}
+	_, ok := tr.Generics[id]
+	return ok
 }
 
 func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
@@ -163,12 +192,13 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 	}
 	switch t := exp.(type) {
 	case *ast.Ident:
-		// TODO check if is generic
 		identType = t.String()
-		if t.IsExported() {
-			identType = tr.PackageName + "." + identType
+		if !tr.isGenericIdentifier(identType) {
+			if t.IsExported() {
+				identType = tr.PackageName + "." + identType
+			}
+			tr.UsedImports[tr.PackageName] = struct{}{}
 		}
-		tr.UsedImports[tr.PackageName] = struct{}{}
 	case *ast.SelectorExpr:
 		if xIdent, ok := t.X.(*ast.Ident); ok {
 			identType = xIdent.String()
@@ -186,7 +216,6 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 	case *ast.Ellipsis:
 		identType += "..."
 	case *ast.FuncType:
-		// TODO generic types
 		identType += "func("
 		for idx, param := range t.Params.List {
 			identType += tr.resolveType(param.Type)

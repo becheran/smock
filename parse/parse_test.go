@@ -33,13 +33,18 @@ type MyInterface interface {
 
 import (
 	"github.com/foo/bar/other"
+	"golang.org/x/exp/constraints"
 )
 
-type MyInterface other.Other`
+type MyInterface other.Other
+
+type InterfaceWithType[T any, B constraints.Ordered] interface {
+	Foo(a, b B) T
+}
+`
 )
 
 func TestParseInterface(t *testing.T) {
-
 	var suite = []struct {
 		src         string
 		line        int
@@ -61,7 +66,20 @@ func TestParseInterface(t *testing.T) {
 				{Path: "io"},
 				{Name: "other", Path: "github.com/foo/bar"},
 			}}},
-		{src2, 5, "not yet implemented", model.InterfaceResult{}},
+
+		{src2, 8, "", model.InterfaceResult{
+			Name:        "InterfaceWithType",
+			PackageName: "p",
+			Methods: []model.Method{{
+				Name:    "Foo",
+				Params:  []model.Ident{{Name: "a", Type: "B"}, {Name: "b", Type: "B"}},
+				Results: []model.Ident{{Type: "T"}},
+			}},
+			Types: []model.Ident{{Name: "T", Type: "any"}, {Name: "B", Type: "constraints.Ordered"}},
+			Imports: []model.Import{
+				{Name: "", Path: "golang.org/x/exp/constraints"},
+			}}},
+		{src2, 6, "not yet implemented", model.InterfaceResult{}},
 	}
 	for idx, s := range suite {
 		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {

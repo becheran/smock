@@ -111,11 +111,46 @@ func (i Import) String() string {
 	return fmt.Sprintf(`%s "%s"`, i.ImportName(), i.Path)
 }
 
+type TypesList []Ident
+
+func (tl TypesList) ListIdentifier() (res string) {
+	if len(tl) == 0 {
+		return
+	}
+	res += "["
+	for idx, t := range tl {
+		res += t.Name
+		if idx+1 < len(tl) {
+			res += ", "
+		}
+	}
+	res += "]"
+
+	return res
+}
+
+func (tl TypesList) ListTypesWithIdentifiers() (res string) {
+	if len(tl) == 0 {
+		return
+	}
+	res += "["
+	for idx, t := range tl {
+		res += fmt.Sprintf("%s %s", t.Name, t.Type)
+		if idx+1 < len(tl) {
+			res += ", "
+		}
+	}
+	res += "]"
+
+	return res
+}
+
 type InterfaceResult struct {
 	Name        string
 	PackageName string
 	Imports     []Import
 	Methods     []Method
+	Types       TypesList
 }
 
 // ValidateReadyForGenerate that all members are set and valid

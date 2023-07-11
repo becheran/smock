@@ -25,7 +25,7 @@ func main() {
 	flag.BoolVar(&version, "v", false, "print smock version")
 	flag.Parse()
 	if version {
-		v := "unkown"
+		v := "unknown"
 		if info, found := debug.ReadBuildInfo(); found {
 			v = info.Main.Version
 		}
