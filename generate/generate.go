@@ -11,9 +11,12 @@ import (
 
 func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	logger.Printf("Start generating mock")
+
 	if err := res.ValidateReadyForGenerate(); err != nil {
 		return "", err
 	}
+
+	hasTypes := len(res.Types) > 0
 
 	mockedStructName := fmt.Sprintf("%s%s", model.MockPrefix, res.Name)
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
@@ -35,8 +38,18 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 
 	w.P("import (")
 	w.Ident()
+	fmtAlreadyImported := false
 	for _, i := range res.Imports {
+		if hasTypes && i.ImportName() == res.PackageName {
+			continue
+		}
+		if i.ImportName() == "fmt" {
+			fmtAlreadyImported = true
+		}
 		w.P("%s", i)
+	}
+	if !fmtAlreadyImported {
+		w.P(`"fmt"`)
 	}
 	w.EndIdent()
 	w.P(")")
@@ -44,11 +57,11 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 
 	// Do not validate when generics are used.
 	// It is complicated to retrieve a valid type and assert that one concrete type implements the interface.
-	w.P("// %s must implement interface %s.%s", mockedStructName, res.PackageName, res.Name)
-	if len(res.Types) <= 0 {
+	if !hasTypes {
+		w.P("// %s must implement interface %s.%s", mockedStructName, res.PackageName, res.Name)
 		w.P("var _ %s.%s = &%s{}", res.PackageName, res.Name, mockedStructName)
+		w.P("")
 	}
-	w.P("")
 
 	w.P(`func New%s%s(t interface {
 	Fatalf(format string, args ...interface{})
@@ -88,7 +101,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		w.P("} else {")
 		w.Ident()
 
-		args := `""`
+		args := `fmt.Sprintf("")`
 		if len(f.Params) > 0 {
 			format := strings.Repeat("%+v, ", len(f.Params))
 			format = format[:len(format)-2]
@@ -151,7 +164,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		if len(f.Results) > 0 {
 			w.P("func (f *%s) Return(%s) {", funcStructWithTypeIdentifier, f.Results.IdentWithTypeString(model.IdentTypeResult))
 			w.Ident()
-			w.P("f.m.f%s = func%s { return %s }", f.Name, f.Signature(), f.Results.IdentString(model.IdentTypeResult))
+			w.P("f.m.f%s = func%s { return %s }", f.Name, f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult))
 			w.EndIdent()
 			w.P("}")
 			w.P("")

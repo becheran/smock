@@ -41,6 +41,8 @@ type MyInterface other.Other
 type InterfaceWithType[T any, B constraints.Ordered] interface {
 	Foo(a, b B) T
 }
+
+type RefMy MyInterface
 `
 )
 
@@ -52,7 +54,7 @@ func TestParseInterface(t *testing.T) {
 		res         model.InterfaceResult
 	}{
 		{src1, 1, "unexpected identifier", model.InterfaceResult{}},
-		{src1, 18, "interface not found", model.InterfaceResult{}},
+		{src1, 18, "interface at p:18 not found", model.InterfaceResult{}},
 
 		{src1, 8, "", model.InterfaceResult{
 			Name:        "MyInterface",
@@ -79,7 +81,8 @@ func TestParseInterface(t *testing.T) {
 			Imports: []model.Import{
 				{Name: "", Path: "golang.org/x/exp/constraints"},
 			}}},
-		{src2, 6, "not yet implemented", model.InterfaceResult{}},
+		{src2, 6, "failed to resolve package reference", model.InterfaceResult{}},
+		{src2, 13, "interface 'MyInterface' not found", model.InterfaceResult{}},
 	}
 	for idx, s := range suite {
 		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
@@ -87,7 +90,7 @@ func TestParseInterface(t *testing.T) {
 			f, err := parser.ParseFile(fset, "src.go", s.src, 0)
 			require.Nil(t, err)
 
-			res, err := parse.ParseInterface(fset, f, s.line)
+			res, err := parse.ParseInterfaceAtPosition(fset, f, s.line)
 			if s.errContains != "" {
 				assert.ErrorContains(t, err, s.errContains)
 				assert.Empty(t, res)

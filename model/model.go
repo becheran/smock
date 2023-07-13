@@ -45,6 +45,16 @@ func (i IdentList) IdentWithTypeString(identPrefix IdentType) (res string) {
 	return
 }
 
+func (i IdentList) TypeString(identPrefix IdentType) (res string) {
+	for idx, ident := range i {
+		res += ident.Type
+		if idx+1 < len(i) {
+			res += ", "
+		}
+	}
+	return
+}
+
 func (i IdentList) IdentString(identPrefix IdentType) (res string) {
 	for idx, ident := range i {
 		name := ident.Name
@@ -71,6 +81,16 @@ func (m Method) Signature() string {
 	retStr := ""
 	if len(m.Results) > 0 {
 		retStr = fmt.Sprintf(" (%s)", m.Results.IdentWithTypeString(IdentTypeResult))
+
+	}
+	return fmt.Sprintf("%s%s", args, retStr)
+}
+
+func (m Method) SignatureWithoutIdentifier() string {
+	args := fmt.Sprintf("(%s)", m.Params.TypeString(IdentTypeInput))
+	retStr := ""
+	if len(m.Results) > 0 {
+		retStr = fmt.Sprintf(" (%s)", m.Results.TypeString(IdentTypeResult))
 
 	}
 	return fmt.Sprintf("%s%s", args, retStr)

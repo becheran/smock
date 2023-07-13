@@ -4,15 +4,40 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"sync"
 
 	"github.com/becheran/smock/logger"
 	"github.com/becheran/smock/model"
 	"golang.org/x/exp/slices"
 )
 
-func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model.InterfaceResult, err error) {
-	i.PackageName = file.Name.Name
+func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.InterfaceResult, err error) {
+	logger.Printf("Parse interface '%s' in package '%s'", interfaceName, pkg.Name)
 
+	for _, file := range pkg.Files {
+		i, err = ParseInterfaceInFile(file, interfaceName)
+		if err == nil {
+			return i, nil
+		}
+	}
+	return model.InterfaceResult{}, fmt.Errorf("interface '%s' not found in package '%s'", interfaceName, pkg.Name)
+}
+
+func ParseInterfaceInFile(file *ast.File, interfaceName string) (i model.InterfaceResult, err error) {
+	logger.Printf("Parse interface %s in file '%s'", interfaceName, file.Name)
+	for _, decl := range file.Decls {
+		ts, err := getTypeSpec(decl)
+		if err != nil {
+			continue
+		}
+		if ts.Name.Name == interfaceName {
+			return parseInterface(ts, file.Name.Name, file.Imports)
+		}
+	}
+	return model.InterfaceResult{}, fmt.Errorf("interface %s not found in file %s", interfaceName, file.Name)
+}
+
+func ParseInterfaceAtPosition(fset *token.FileSet, file *ast.File, startLine int) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface in file '%s:%d'", file.Name, startLine)
 
 	for _, decl := range file.Decls {
@@ -22,112 +47,188 @@ func ParseInterface(fset *token.FileSet, file *ast.File, startLine int) (i model
 			continue
 		}
 
-		x, ok := decl.(*ast.GenDecl)
-		if !ok {
-			return model.InterfaceResult{}, fmt.Errorf("unexpected decl type %T", decl)
+		ts, err := getTypeSpec(decl)
+		if err != nil {
+			return model.InterfaceResult{}, err
 		}
 
-		if x.Tok != token.TYPE {
-			return model.InterfaceResult{}, fmt.Errorf("unexpected identifier %T", x.Tok)
-		}
-		if len(x.Specs) != 1 {
-			return model.InterfaceResult{}, fmt.Errorf("expected one spec, but got %d", len(x.Specs))
-		}
-		ts, ok := x.Specs[0].(*ast.TypeSpec)
-		if !ok {
-			return model.InterfaceResult{}, fmt.Errorf("expected type spec, but got %T", x.Specs[0])
-		}
-		if ts.Name == nil {
-			return model.InterfaceResult{}, fmt.Errorf("expected ts name not to be nil")
-		}
-		i.Name = ts.Name.Name
-		logger.Printf("found interface '%s'", i.Name)
-
-		interfaceType, ok := ts.Type.(*ast.InterfaceType)
-		if !ok {
-			if ref := expToReference(ts.Type); ref != nil {
-				return model.InterfaceResult{}, fmt.Errorf("references not yet implemented")
-			}
-			return model.InterfaceResult{}, fmt.Errorf("unexpected type %T", ts.Type)
-		}
-
-		if interfaceType.Methods == nil {
-			return model.InterfaceResult{}, fmt.Errorf("unexpected empty interface")
-		}
-
-		identResolver := identResolver{PackageName: i.PackageName, UsedImports: make(map[string]struct{})}
-		if ts.TypeParams != nil {
-			i.Types = identResolver.fieldListToIdent(ts.TypeParams.List)
-		}
-		generics := make(map[string]struct{})
-		for _, genType := range i.Types {
-			generics[genType.Name] = struct{}{}
-		}
-		identResolver.Generics = generics
-
-		for _, it := range interfaceType.Methods.List {
-			if ref := expToReference(it.Type); ref != nil {
-				return model.InterfaceResult{}, fmt.Errorf("references not yet implemented")
-			}
-			if len(it.Names) != 1 {
-				continue
-			}
-			name := it.Names[0]
-			if !name.IsExported() {
-				continue
-			}
-			logger.Printf("found exported method '%s'", name)
-			switch meth := it.Type.(type) {
-			case *ast.FuncType:
-				getList := func(list *ast.FieldList) []*ast.Field {
-					if list == nil {
-						return nil
-					}
-					return list.List
-				}
-				method := model.Method{
-					Name:       name.String(),
-					TypeParams: identResolver.fieldListToIdent(getList(meth.TypeParams)),
-					Params:     identResolver.fieldListToIdent(getList(meth.Params)),
-					Results:    identResolver.fieldListToIdent(getList(meth.Results)),
-				}
-				i.Methods = append(i.Methods, method)
-			default:
-				return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
-			}
-		}
-
-		for usedImport := range identResolver.UsedImports {
-			logger.Printf("Add used import '%s' to result", usedImport)
-
-			if usedImport == i.PackageName {
-				continue
-			}
-			var foundImport *model.Import
-			for _, astImp := range file.Imports {
-				imp := model.ImportFromAst(astImp)
-				if imp.ImportName() == usedImport {
-					foundImport = &imp
-					break
-				}
-			}
-			if foundImport == nil {
-				return model.InterfaceResult{}, fmt.Errorf("import '%s' not found", usedImport)
-			}
-			i.Imports = append(i.Imports, *foundImport)
-		}
-		slices.SortFunc(i.Imports, func(a, b model.Import) bool { return a.ImportName() < b.ImportName() })
-
-		return i, nil
+		return parseInterface(ts, file.Name.Name, file.Imports)
 	}
 
-	return model.InterfaceResult{}, fmt.Errorf("interface not found")
+	return model.InterfaceResult{}, fmt.Errorf("interface at %s:%d not found", file.Name, startLine)
 }
 
-func expToReference(exp ast.Expr) *model.Reference {
+func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec) (i model.InterfaceResult, err error) {
+	logger.Printf("Parse interface '%s'", ts.Name.Name)
+
+	i.Name = ts.Name.Name
+	i.PackageName = pkgName
+
+	interfaceType, ok := ts.Type.(*ast.InterfaceType)
+	if !ok {
+		if ref := expToReference(ts.Type, pkgName); ref != nil {
+			packageId := ref.PackageID
+			pkg, err := parsePackage(packageId, imports)
+			if err != nil {
+				return model.InterfaceResult{}, fmt.Errorf("failed to resolve package reference. %w", err)
+			}
+			res, err := ParseInterfaceInPackage(pkg, ref.Name)
+			if err != nil {
+				return model.InterfaceResult{}, fmt.Errorf("failed to parse referenced interface. %w", err)
+			}
+			res.Name = i.Name
+			res.PackageName = i.PackageName
+			return res, nil
+		}
+		return model.InterfaceResult{}, fmt.Errorf("unexpected type %T", ts.Type)
+	}
+
+	if interfaceType.Methods == nil {
+		return model.InterfaceResult{}, fmt.Errorf("unexpected empty interface")
+	}
+
+	identResolver := identResolver{PackageName: i.PackageName, UsedImports: make(map[string]struct{})}
+	if ts.TypeParams != nil {
+		i.Types = identResolver.fieldListToIdent(ts.TypeParams.List)
+	}
+	generics := make(map[string]struct{})
+	for _, genType := range i.Types {
+		generics[genType.Name] = struct{}{}
+	}
+	identResolver.Generics = generics
+
+	referencedInterfaces := []*model.Reference{}
+	for _, it := range interfaceType.Methods.List {
+		if ref := expToReference(it.Type, pkgName); ref != nil {
+			logger.Logger.Printf("Found referenced interface '%s'", ref.Name)
+			referencedInterfaces = append(referencedInterfaces, ref)
+			continue
+		}
+		if len(it.Names) != 1 {
+			continue
+		}
+		name := it.Names[0]
+		if !name.IsExported() {
+			continue
+		}
+		logger.Printf("found exported method '%s'", name)
+		switch meth := it.Type.(type) {
+		case *ast.FuncType:
+			getList := func(list *ast.FieldList) []*ast.Field {
+				if list == nil {
+					return nil
+				}
+				return list.List
+			}
+			method := model.Method{
+				Name:       name.String(),
+				TypeParams: identResolver.fieldListToIdent(getList(meth.TypeParams)),
+				Params:     identResolver.fieldListToIdent(getList(meth.Params)),
+				Results:    identResolver.fieldListToIdent(getList(meth.Results)),
+			}
+			i.Methods = append(i.Methods, method)
+		default:
+			return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
+		}
+	}
+
+	// TODO: Move to own go function
+	var wg sync.WaitGroup
+	var mux sync.Mutex
+	packages := make(map[string]*ast.Package)
+	var packagesErr error
+	for _, ref := range referencedInterfaces {
+		packageId := ref.PackageID
+		if _, ok := packages[packageId]; !ok {
+			packages[packageId] = nil
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				pkg, err := parsePackage(packageId, imports)
+				mux.Lock()
+				defer mux.Unlock()
+				if err != nil {
+					packagesErr = err
+				} else {
+					packages[packageId] = pkg
+				}
+			}()
+		}
+	}
+
+	wg.Wait()
+	if packagesErr != nil {
+		return model.InterfaceResult{}, fmt.Errorf("failed to resolve package reference. %w", packagesErr)
+	}
+
+	inheritInterfaces := []*model.InterfaceResult{}
+	for _, ref := range referencedInterfaces {
+		packageId := ref.PackageID
+		name := ref.Name
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res, err := ParseInterfaceInPackage(packages[packageId], name)
+			mux.Lock()
+			defer mux.Unlock()
+			if err != nil {
+				packagesErr = err
+			} else {
+				inheritInterfaces = append(inheritInterfaces, &res)
+			}
+		}()
+	}
+
+	wg.Wait()
+	if packagesErr != nil {
+		return model.InterfaceResult{}, fmt.Errorf("failed to resolve referenced interfaces. %w", packagesErr)
+	}
+
+	for usedImport := range identResolver.UsedImports {
+		logger.Printf("Add used import '%s' to result", usedImport)
+
+		if usedImport == i.PackageName {
+			continue
+		}
+		var foundImport *model.Import
+		for _, astImp := range imports {
+			imp := model.ImportFromAst(astImp)
+			if imp.ImportName() == usedImport {
+				foundImport = &imp
+				break
+			}
+		}
+		if foundImport == nil {
+			return model.InterfaceResult{}, fmt.Errorf("import '%s' not found", usedImport)
+		}
+		i.Imports = append(i.Imports, *foundImport)
+	}
+
+	for _, inheritInterface := range inheritInterfaces {
+		i.Methods = append(i.Methods, inheritInterface.Methods...)
+	outer:
+		for _, genImport := range inheritInterface.Imports {
+			for _, imp := range i.Imports {
+				if imp.ImportName() == genImport.ImportName() {
+					logger.Printf("Import %s already added in original interface", genImport.ImportName())
+					continue outer // TODO what if imported with same name, but different package??
+				}
+			}
+			i.Imports = append(i.Imports, genImport)
+		}
+	}
+
+	slices.SortFunc(i.Imports, func(a, b model.Import) bool { return a.ImportName() < b.ImportName() })
+
+	return i, nil
+}
+
+func expToReference(exp ast.Expr, pkgName string) *model.Reference {
 	switch meth := exp.(type) {
 	case *ast.SelectorExpr:
-		packageID := ""
+		packageID := pkgName
 		if xIdent, ok := meth.X.(*ast.Ident); ok {
 			packageID = xIdent.String()
 		}
@@ -286,4 +387,27 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 		panic(fmt.Sprintf("Not Implemented Type %T", t))
 	}
 	return identType
+}
+
+func getTypeSpec(decl ast.Decl) (ts *ast.TypeSpec, err error) {
+	x, ok := decl.(*ast.GenDecl)
+	if !ok {
+		return nil, fmt.Errorf("unexpected decl type %T", decl)
+	}
+
+	if x.Tok != token.TYPE {
+		return nil, fmt.Errorf("unexpected identifier %T", x.Tok)
+	}
+	if len(x.Specs) != 1 {
+		return nil, fmt.Errorf("expected one spec, but got %d", len(x.Specs))
+	}
+
+	ts, ok = x.Specs[0].(*ast.TypeSpec)
+	if !ok {
+		return nil, fmt.Errorf("expected type spec, but got %T", x.Specs[0])
+	}
+	if ts.Name == nil {
+		return nil, fmt.Errorf("expected ts name not to be nil")
+	}
+	return ts, nil
 }

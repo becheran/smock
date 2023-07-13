@@ -61,7 +61,7 @@ func main() {
 		log.Fatalf("Failed to parse file '%s'. %s", fileName, err)
 	}
 
-	i, err := parse.ParseInterface(fset, f, line)
+	i, err := parse.ParseInterfaceAtPosition(fset, f, line)
 	if err != nil {
 		log.Fatalf("Failed to parse interface. %s", err)
 	}

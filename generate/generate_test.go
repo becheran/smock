@@ -16,6 +16,7 @@ package orig_mock
 
 import (
 	orig "github.com/becheran/smock/orig"
+	fmt "fmt"
 )
 
 // MockHandler must implement interface orig.Handler
@@ -40,7 +41,7 @@ func (m *MockHandler) Target() (r0 int) {
 	if m.fTarget != nil {
 		return m.fTarget()
 	} else {
-		m.unexpectedCall("Target", "")
+		m.unexpectedCall("Target", fmt.Sprintf(""))
 		return
 	}
 }
@@ -70,7 +71,7 @@ type MockHandlerTargetFunc struct {
 }
 
 func (f *MockHandlerTargetFunc) Return(r0 int) {
-	f.m.fTarget = func() (r0 int) { return r0 }
+	f.m.fTarget = func() (int) { return r0 }
 }
 
 func (f *MockHandlerTargetFunc) Do(do func() (r0 int)) {
@@ -82,7 +83,7 @@ func TestGenerateMock(t *testing.T) {
 	input := model.InterfaceResult{
 		PackageName: "orig",
 		Name:        "Handler",
-		Imports:     []model.Import{{Name: "orig", Path: "github.com/becheran/smock/orig"}},
+		Imports:     []model.Import{{Name: "orig", Path: "github.com/becheran/smock/orig"}, {Path: "fmt"}},
 		Methods:     []model.Method{{Name: "Target", Results: []model.Ident{{Type: "int"}}}},
 	}
 
@@ -98,10 +99,8 @@ const expOutputWithTypes = `// DO NOT EDIT
 package orig_mock
 
 import (
-	orig "github.com/becheran/smock/foo/mock"
+	"fmt"
 )
-
-// MockHandler must implement interface orig.Handler
 
 func NewMockHandler[T any, N orig.Number](t interface {
 	Fatalf(format string, args ...interface{})
@@ -152,7 +151,7 @@ type MockHandlerTargetFunc[T any, N orig.Number] struct {
 }
 
 func (f *MockHandlerTargetFunc[T, N]) Return(r0 int, r1 N) {
-	f.m.fTarget = func(i0 T) (r0 int, r1 N) { return r0, r1 }
+	f.m.fTarget = func(T) (int, N) { return r0, r1 }
 }
 
 func (f *MockHandlerTargetFunc[T, N]) Do(do func(i0 T) (r0 int, r1 N)) {
