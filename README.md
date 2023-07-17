@@ -37,7 +37,7 @@ The intention of *smock* is to simplify the process of manually mocking interfac
 Install latest version:
 
 ``` sh
-go install github.com/becheran/smock
+go install github.com/becheran/smock@latest
 ```
 
 Annotate `interface` which shall be mocked:
