@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/becheran/smock/gomod"
+	"github.com/becheran/smock/pathhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,7 +58,7 @@ require (
 	info, err := gomod.FindMod(p)
 	assert.Nil(t, err)
 	assert.Equal(t, "github.com/becheran/smock", info.ModuleName)
-	assert.Equal(t, gomod.PathToUnix(root), info.Path)
+	assert.Equal(t, pathhelper.PathToUnix(root), info.Path)
 }
 
 func TestModImportPath(t *testing.T) {
@@ -72,29 +73,7 @@ func TestModImportPath(t *testing.T) {
 	}
 	for id, test := range suite {
 		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
-			assert.Equal(t, gomod.PathToUnix(test.result), test.info.ModImportPath(test.path))
-		})
-	}
-}
-
-func TestMockFilePath(t *testing.T) {
-	const mod = "github.com/becheran/smock"
-	const root = "/foo/bar"
-	var suite = []struct {
-		info          gomod.ModInfo
-		filePath      string
-		interfaceName string
-		packageName   string
-		result        string
-	}{
-		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/bar.go", "MyInterface", "smock", "/foo/bar/mocks/smock_mock/bar_myinterface_mock.go"},
-		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar.go", "MyInterface", "foo", "/foo/bar/mocks/foo_mock/bar_myinterface_mock.go"},
-		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar/baz.go", "MyInterface", "bar", "/foo/bar/mocks/foo_mock/bar_mock/baz_myinterface_mock.go"},
-		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar/baz.go", "MyInterface", "baz", "/foo/bar/mocks/foo_mock/bar_mock/baz_mock/baz_myinterface_mock.go"},
-	}
-	for id, test := range suite {
-		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
-			assert.Equal(t, test.result, test.info.MockFilePath(test.filePath, test.interfaceName, test.packageName))
+			assert.Equal(t, pathhelper.PathToUnix(test.result), test.info.ModImportPath(test.path))
 		})
 	}
 }

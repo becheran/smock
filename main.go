@@ -16,6 +16,7 @@ import (
 	"github.com/becheran/smock/logger"
 	"github.com/becheran/smock/model"
 	"github.com/becheran/smock/parse"
+	"github.com/becheran/smock/pathhelper"
 )
 
 func main() {
@@ -80,7 +81,7 @@ func main() {
 		log.Fatalf("Failed to generate mock. %s", err)
 	}
 
-	mockFilePath := modInfo.MockFilePath(file, i.Name)
+	mockFilePath := pathhelper.MockFilePath(file, i.PackageName, i.Name)
 	logger.Printf("Create mock file: '%s'", mockFilePath)
 	if err := os.MkdirAll(path.Dir(mockFilePath), os.ModePerm); err != nil {
 		log.Fatalf("Failed to create directory '%s'. %s", path.Dir(mockFilePath), err)
