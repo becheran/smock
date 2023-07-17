@@ -56,12 +56,21 @@ func (modInfo ModInfo) ModImportPath(dir string) string {
 }
 
 // MockDir returns the file used to for the generated mocks.
-func (modInfo ModInfo) MockFilePath(filePath, interfaceName string) string {
+func (modInfo ModInfo) MockFilePath(filePath, interfaceName, packageName string) string {
 	modInfoPathUnix := PathToUnix(modInfo.Path)
 	subPath := strings.TrimPrefix(PathToUnix(filePath), modInfoPathUnix)
-	goIdx := strings.LastIndex(subPath, ".go")
-	subPath = fmt.Sprintf("%s_%s%s%s", subPath[:goIdx], strings.ToLower(interfaceName), model.MockPackageSuffix, subPath[goIdx:])
-	return fmt.Sprintf("%s/%s%s", modInfoPathUnix, model.MockDir, subPath)
+	lastSlashIdx := strings.LastIndex(subPath, "/")
+	if lastSlashIdx < 0 {
+		lastSlashIdx = 0
+	}
+	path := subPath[:lastSlashIdx]
+	if !strings.HasSuffix(path, packageName) {
+		path = fmt.Sprintf("%s/%s", path, packageName)
+	}
+	path = strings.ReplaceAll(path[1:], "/", "_mock/")
+	path += "_mock/"
+	fileName := fmt.Sprintf("%s_%s%s.go", subPath[lastSlashIdx+1:len(subPath)-3], strings.ToLower(interfaceName), model.MockPackageSuffix)
+	return fmt.Sprintf("%s/%s/%s%s", modInfoPathUnix, model.MockDir, path, fileName)
 }
 
 func PathToUnix(p string) string {

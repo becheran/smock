@@ -76,3 +76,25 @@ func TestModImportPath(t *testing.T) {
 		})
 	}
 }
+
+func TestMockFilePath(t *testing.T) {
+	const mod = "github.com/becheran/smock"
+	const root = "/foo/bar"
+	var suite = []struct {
+		info          gomod.ModInfo
+		filePath      string
+		interfaceName string
+		packageName   string
+		result        string
+	}{
+		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/bar.go", "MyInterface", "smock", "/foo/bar/mocks/smock_mock/bar_myinterface_mock.go"},
+		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar.go", "MyInterface", "foo", "/foo/bar/mocks/foo_mock/bar_myinterface_mock.go"},
+		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar/baz.go", "MyInterface", "bar", "/foo/bar/mocks/foo_mock/bar_mock/baz_myinterface_mock.go"},
+		{gomod.ModInfo{ModuleName: mod, Path: root}, root + "/foo/bar/baz.go", "MyInterface", "baz", "/foo/bar/mocks/foo_mock/bar_mock/baz_mock/baz_myinterface_mock.go"},
+	}
+	for id, test := range suite {
+		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
+			assert.Equal(t, test.result, test.info.MockFilePath(test.filePath, test.interfaceName, test.packageName))
+		})
+	}
+}
