@@ -366,6 +366,9 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 			identType += "chan "
 		}
 		identType += tr.resolveType(t.Value)
+	case *ast.StarExpr:
+		identType += "*"
+		identType += tr.resolveType(t.X)
 	case *ast.InterfaceType:
 		identType += "interface{"
 		for idx, method := range t.Methods.List {
