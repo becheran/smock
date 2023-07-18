@@ -142,7 +142,7 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	w.P("}")
 	w.P("")
 
-	for _, f := range res.Methods {
+	for idx, f := range res.Methods {
 		funcStruct := fmt.Sprintf("%s%sFunc", mockedStructName, f.Name)
 		funcStructWithTypeIdentifier := fmt.Sprintf("%s%s", funcStruct, res.Types.ListIdentifier())
 
@@ -175,6 +175,9 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 		w.P("f.m.f%s = do", f.Name)
 		w.EndIdent()
 		w.P("}")
+		if idx < len(res.Methods)-1 {
+			w.P("")
+		}
 	}
 	logger.Printf("Finished generating mock")
 

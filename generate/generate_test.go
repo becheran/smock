@@ -35,6 +35,7 @@ type MockHandler struct {
 		Helper()
 	}
 	fTarget func() (r0 int)
+	fVoid func()
 }
 
 func (m *MockHandler) Target() (r0 int) {
@@ -42,6 +43,15 @@ func (m *MockHandler) Target() (r0 int) {
 		return m.fTarget()
 	} else {
 		m.unexpectedCall("Target", fmt.Sprintf(""))
+		return
+	}
+}
+
+func (m *MockHandler) Void() {
+	if m.fVoid != nil {
+		m.fVoid()
+	} else {
+		m.unexpectedCall("Void", fmt.Sprintf(""))
 		return
 	}
 }
@@ -77,6 +87,19 @@ func (f *MockHandlerTargetFunc) Return(r0 int) {
 func (f *MockHandlerTargetFunc) Do(do func() (r0 int)) {
 	f.m.fTarget = do
 }
+
+func (mh *MockHandlerWhen) Void() *MockHandlerVoidFunc {
+	mh.m.fVoid = func() { return }
+	return &MockHandlerVoidFunc{m: mh.m}
+}
+
+type MockHandlerVoidFunc struct {
+	m *MockHandler
+}
+
+func (f *MockHandlerVoidFunc) Do(do func()) {
+	f.m.fVoid = do
+}
 `
 
 func TestGenerateMock(t *testing.T) {
@@ -84,7 +107,10 @@ func TestGenerateMock(t *testing.T) {
 		PackageName: "orig",
 		Name:        "Handler",
 		Imports:     []model.Import{{Name: "orig", Path: "github.com/becheran/smock/orig"}, {Path: "fmt"}},
-		Methods:     []model.Method{{Name: "Target", Results: []model.Ident{{Type: "int"}}}},
+		Methods: []model.Method{
+			{Name: "Target", Results: []model.Ident{{Type: "int"}}},
+			{Name: "Void"},
+		},
 	}
 
 	res, err := generate.GenerateMock(input)

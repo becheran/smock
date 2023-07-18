@@ -77,7 +77,10 @@ type Method struct {
 }
 
 func (m Method) Signature() string {
-	args := fmt.Sprintf("(%s)", m.Params.IdentWithTypeString(IdentTypeInput))
+	args := "()"
+	if m.Params != nil {
+		args = fmt.Sprintf("(%s)", m.Params.IdentWithTypeString(IdentTypeInput))
+	}
 	retStr := ""
 	if len(m.Results) > 0 {
 		retStr = fmt.Sprintf(" (%s)", m.Results.IdentWithTypeString(IdentTypeResult))
@@ -87,7 +90,10 @@ func (m Method) Signature() string {
 }
 
 func (m Method) SignatureWithoutIdentifier() string {
-	args := fmt.Sprintf("(%s)", m.Params.TypeString(IdentTypeInput))
+	args := "()"
+	if m.Params != nil {
+		args = fmt.Sprintf("(%s)", m.Params.TypeString(IdentTypeInput))
+	}
 	retStr := ""
 	if len(m.Results) > 0 {
 		retStr = fmt.Sprintf(" (%s)", m.Results.TypeString(IdentTypeResult))
