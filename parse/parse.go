@@ -325,7 +325,7 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 			}
 		}
 		identType += ")"
-		if len(t.Results.List) > 0 {
+		if t.Results != nil && len(t.Results.List) > 0 {
 			identType += " "
 			if len(t.Results.List) > 1 {
 				identType += "("

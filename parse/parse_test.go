@@ -24,7 +24,7 @@ var X = f(3.14)*2 + c
 
 // Comment
 type MyInterface interface {
-	Foo(x other.Type, bar, baz *string, r io.Reader) (o other.Other, oo map[string]SamePackage)
+	Foo(x other.Type, bar, baz *string, r io.Reader, fun func()) (o other.Other, oo map[string]SamePackage)
 	Void()
 	unexported() int
 }
@@ -62,8 +62,14 @@ func TestParseInterface(t *testing.T) {
 			PackageName: "p",
 			Methods: []model.Method{
 				{
-					Name:    "Foo",
-					Params:  []model.Ident{{Name: "x", Type: "other.Type"}, {Name: "bar", Type: "*string"}, {Name: "baz", Type: "*string"}, {Name: "r", Type: "io.Reader"}},
+					Name: "Foo",
+					Params: []model.Ident{
+						{Name: "x", Type: "other.Type"},
+						{Name: "bar", Type: "*string"},
+						{Name: "baz", Type: "*string"},
+						{Name: "r", Type: "io.Reader"},
+						{Name: "fun", Type: "func()"},
+					},
 					Results: []model.Ident{{Name: "o", Type: "other.Other"}, {Name: "oo", Type: "map[string]p.SamePackage"}}},
 				{Name: "Void", Params: nil, Results: nil},
 			},
