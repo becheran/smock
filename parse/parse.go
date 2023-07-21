@@ -318,26 +318,30 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 		identType += "..."
 	case *ast.FuncType:
 		identType += "func("
-		for idx, param := range t.Params.List {
-			identType += tr.resolveType(param.Type)
-			if idx+1 < len(t.Params.List) {
-				identType += ","
+		for _, param := range t.Params.List {
+			for i := 0; i < len(param.Names); i++ {
+				identType += tr.resolveType(param.Type)
+				identType += ", "
 			}
+		}
+		if len(t.Params.List) > 0 {
+			identType = identType[:len(identType)-2]
 		}
 		identType += ")"
 		if t.Results != nil && len(t.Results.List) > 0 {
 			identType += " "
-			if len(t.Results.List) > 1 {
+			isMultiple := len(t.Results.List) > 1 || len(t.Results.List[0].Names) > 1
+			if isMultiple {
 				identType += "("
 			}
-			for idx, param := range t.Results.List {
-				identType += tr.resolveType(param.Type)
-				if idx+1 < len(t.Params.List) {
-					identType += ","
+			for _, param := range t.Results.List {
+				for i := 0; i < len(param.Names); i++ {
+					identType += tr.resolveType(param.Type)
+					identType += ", "
 				}
 			}
-			if len(t.Results.List) > 1 {
-				identType += ")"
+			if isMultiple {
+				identType = identType[:len(identType)-2] + ")"
 			}
 		}
 	case *ast.StructType:
