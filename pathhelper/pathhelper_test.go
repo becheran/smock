@@ -15,9 +15,9 @@ func TestMockFilePath(t *testing.T) {
 		interfaceName string
 		expdMockFile  string
 	}{
-		{"/foo/bar.go", "foo", "MockMe", "/foo_mock/bar_mockme.go"},
-		{"/foo/baz/bar.go", "baz", "MockMe", "/foo/baz_mock/bar_mockme.go"},
-		{"/foo/main.go", "other", "MockMe", "/other_mock/main_mockme.go"},
+		{"/foo/bar.go", "foo", "MockMe", "/foo/foo_mock/bar_mockme.go"},
+		{"/foo/baz/bar.go", "baz", "MockMe", "/foo/baz/baz_mock/bar_mockme.go"},
+		{"/foo/main.go", "other", "MockMe", "/foo/other_mock/main_mockme.go"},
 	}
 	for id, test := range suite {
 		t.Run(fmt.Sprintf("%d", id), func(t *testing.T) {
