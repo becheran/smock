@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"path"
 	"sync"
 
 	"github.com/becheran/smock/logger"
 	"github.com/becheran/smock/model"
+	"github.com/becheran/smock/pathhelper"
 	"golang.org/x/exp/slices"
 )
 
 func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface '%s' in package '%s'", interfaceName, pkg.Name)
 
-	for _, file := range pkg.Files {
-		i, err = ParseInterfaceInFile(file, interfaceName)
+	for path, file := range pkg.Files {
+		i, err = ParseInterfaceInFile(file, interfaceName, path)
 		if err == nil {
 			return i, nil
 		}
@@ -23,7 +25,7 @@ func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.In
 	return model.InterfaceResult{}, fmt.Errorf("interface '%s' not found in package '%s'", interfaceName, pkg.Name)
 }
 
-func ParseInterfaceInFile(file *ast.File, interfaceName string) (i model.InterfaceResult, err error) {
+func ParseInterfaceInFile(file *ast.File, interfaceName, path string) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface %s in file '%s'", interfaceName, file.Name)
 	for _, decl := range file.Decls {
 		ts, err := getTypeSpec(decl)
@@ -31,7 +33,7 @@ func ParseInterfaceInFile(file *ast.File, interfaceName string) (i model.Interfa
 			continue
 		}
 		if ts.Name.Name == interfaceName {
-			return parseInterface(ts, file.Name.Name, file.Imports)
+			return parseInterface(ts, file.Name.Name, path, file.Imports)
 		}
 	}
 	return model.InterfaceResult{}, fmt.Errorf("interface %s not found in file %s", interfaceName, file.Name)
@@ -52,14 +54,15 @@ func ParseInterfaceAtPosition(fset *token.FileSet, file *ast.File, startLine int
 			return model.InterfaceResult{}, err
 		}
 
-		return parseInterface(ts, file.Name.Name, file.Imports)
+		return parseInterface(ts, file.Name.Name, "./", file.Imports)
 	}
 
 	return model.InterfaceResult{}, fmt.Errorf("interface at %s:%d not found", file.Name, startLine)
 }
 
-func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec) (i model.InterfaceResult, err error) {
-	logger.Printf("Parse interface '%s'", ts.Name.Name)
+func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.ImportSpec) (i model.InterfaceResult, err error) {
+	logger.Printf("Parse interface '%s' in file '%s'", ts.Name.Name, file)
+	dir := path.Dir(pathhelper.PathToUnix(file))
 
 	i.Name = ts.Name.Name
 	i.PackageName = pkgName
@@ -68,13 +71,13 @@ func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec)
 	if !ok {
 		if ref := expToReference(ts.Type, pkgName); ref != nil {
 			packageId := ref.PackageID
-			pkg, err := parsePackage(packageId, imports)
+			pkg, err := parsePackage(packageId, imports, dir)
 			if err != nil {
 				return model.InterfaceResult{}, fmt.Errorf("failed to resolve package reference. %w", err)
 			}
 			res, err := ParseInterfaceInPackage(pkg, ref.Name)
 			if err != nil {
-				return model.InterfaceResult{}, fmt.Errorf("failed to parse referenced interface. %w", err)
+				return model.InterfaceResult{}, fmt.Errorf("failed to parse referenced interface '%s'. %w", i.Name, err)
 			}
 			res.Name = i.Name
 			res.PackageName = i.PackageName
@@ -100,7 +103,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec)
 	referencedInterfaces := []*model.Reference{}
 	for _, it := range interfaceType.Methods.List {
 		if ref := expToReference(it.Type, pkgName); ref != nil {
-			logger.Logger.Printf("Found referenced interface '%s'", ref.Name)
+			logger.Logger.Printf("Found referenced interface '%s' in '%s'", ref.Name, ref.PackageID)
 			referencedInterfaces = append(referencedInterfaces, ref)
 			continue
 		}
@@ -145,7 +148,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				pkg, err := parsePackage(packageId, imports)
+				pkg, err := parsePackage(packageId, imports, dir)
 				mux.Lock()
 				defer mux.Unlock()
 				if err != nil {
@@ -183,7 +186,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec)
 
 	wg.Wait()
 	if packagesErr != nil {
-		return model.InterfaceResult{}, fmt.Errorf("failed to resolve referenced interfaces. %w", packagesErr)
+		return model.InterfaceResult{}, fmt.Errorf("failed to resolve referenced interfaces for '%s'. %w", i.Name, packagesErr)
 	}
 
 	for usedImport := range identResolver.UsedImports {
@@ -206,6 +209,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName string, imports []*ast.ImportSpec)
 		i.Imports = append(i.Imports, *foundImport)
 	}
 
+	slices.SortFunc(inheritInterfaces, func(a, b *model.InterfaceResult) bool { return a.Name < b.Name })
 	for _, inheritInterface := range inheritInterfaces {
 		i.Methods = append(i.Methods, inheritInterface.Methods...)
 	outer:

@@ -13,10 +13,9 @@ import (
 	"github.com/becheran/smock/model"
 )
 
-func parsePackage(packageId string, imports []*ast.ImportSpec) (pkg *ast.Package, err error) {
-	logger.Printf("Resolve package %s", packageId)
+func parsePackage(packageId string, imports []*ast.ImportSpec, dir string) (pkg *ast.Package, err error) {
+	logger.Printf("Resolve package %s in %s", packageId, dir)
 
-	dir := "./"
 	for _, astImp := range imports {
 		imp := model.ImportFromAst(astImp)
 		if imp.ImportName() == packageId {
@@ -28,7 +27,6 @@ func parsePackage(packageId string, imports []*ast.ImportSpec) (pkg *ast.Package
 			break
 		}
 	}
-	logger.Printf("Resolve directory %s", dir)
 
 	noTestFileFilter := func(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }
 	parseRes, err := parser.ParseDir(token.NewFileSet(), dir, noTestFileFilter, parser.Mode(0))
