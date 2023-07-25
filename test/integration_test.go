@@ -2,6 +2,7 @@ package test_test
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -20,10 +21,9 @@ import (
 const testPackagePath = "./test_package"
 const testGoldenFileDir = "golden_test"
 
-func TestGenerate(t *testing.T) {
-	// Set to true if you want to update the golden files
-	const updateGoldenFiles = false
+var generate = flag.Bool("generate", false, "generate golden files")
 
+func TestGenerate(t *testing.T) {
 	logger.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 	os.Chdir(testPackagePath)
 	os.RemoveAll("./test_package/testpackage_mock")
@@ -36,7 +36,7 @@ func TestGenerate(t *testing.T) {
 		}
 
 		goldenFilePath := goldenFilePath(file)
-		if updateGoldenFiles {
+		if *generate {
 			fmt.Printf("Generated mocks for %s:%d in %s\n", i.File, i.Line, goldenFilePath)
 			destination, err := os.Create(goldenFilePath)
 			if err != nil {

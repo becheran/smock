@@ -32,3 +32,9 @@ type InheritMultiple interface {
 	Extend
 	Own(int, string) (int, string)
 }
+
+//go:generate smock -debug
+type WithTypes[T, B any] interface {
+	Foo(a, b T) B
+	Empty()
+}
