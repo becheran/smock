@@ -103,7 +103,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 	referencedInterfaces := []*model.Reference{}
 	for _, it := range interfaceType.Methods.List {
 		if ref := expToReference(it.Type, pkgName); ref != nil {
-			logger.Logger.Printf("Found referenced interface '%s' in '%s'", ref.Name, ref.PackageID)
+			logger.Printf("Found referenced interface '%s' in '%s'", ref.Name, ref.PackageID)
 			referencedInterfaces = append(referencedInterfaces, ref)
 			continue
 		}
@@ -212,13 +212,11 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 	slices.SortFunc(inheritInterfaces, func(a, b *model.InterfaceResult) bool { return a.Name < b.Name })
 	for _, inheritInterface := range inheritInterfaces {
 		i.Methods = append(i.Methods, inheritInterface.Methods...)
-	outer:
+
 		for _, genImport := range inheritInterface.Imports {
-			for _, imp := range i.Imports {
-				if imp.ImportName() == genImport.ImportName() {
-					logger.Printf("Import %s already added in original interface", genImport.ImportName())
-					continue outer // TODO what if imported with same name, but different package??
-				}
+			if slices.ContainsFunc(i.Imports, func(a model.Import) bool { return a.ImportName() == genImport.ImportName() }) {
+				logger.Printf("Import %s already added in original interface", genImport.ImportName())
+				continue
 			}
 			i.Imports = append(i.Imports, genImport)
 		}
@@ -382,7 +380,6 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 		for idx, method := range t.Methods.List {
 			identType += " "
 			for nameIdx, name := range method.Names {
-				// TODO inheritted interfaces
 				identType += name.String() + " "
 				if nameIdx+1 < len(method.Names) {
 					identType += ","

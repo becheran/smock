@@ -30,7 +30,7 @@ func main() {
 	}
 
 	if dbg {
-		logger.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+		logger.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile))
 		logger.Printf("Debug mode enabled\n")
 	}
 

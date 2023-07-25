@@ -2,14 +2,20 @@ package logger
 
 import (
 	"fmt"
-	"io"
 	"log"
 )
 
-var Logger *log.Logger = log.New(io.Discard, "", 0)
+var logger *log.Logger = nil
+
+func SetLogger(l *log.Logger) {
+	logger = l
+}
 
 func Printf(format string, v ...interface{}) {
-	if err := Logger.Output(2, fmt.Sprintf(format, v...)); err != nil {
+	if logger == nil {
+		return
+	}
+	if err := logger.Output(2, fmt.Sprintf(format, v...)); err != nil {
 		panic(err)
 	}
 }

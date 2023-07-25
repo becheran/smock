@@ -9,11 +9,11 @@ import (
 	"github.com/becheran/smock/model"
 )
 
-func GenerateMock(res model.InterfaceResult) (mock string, err error) {
+func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	logger.Printf("Start generating mock")
 
 	if err := res.ValidateReadyForGenerate(); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	hasTypes := len(res.Types) > 0
@@ -181,5 +181,5 @@ func GenerateMock(res model.InterfaceResult) (mock string, err error) {
 	}
 	logger.Printf("Finished generating mock")
 
-	return w.String(), nil
+	return w.buff.Bytes(), nil
 }

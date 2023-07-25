@@ -17,6 +17,10 @@ import (
 
 // GenerateMocks for interface at file and line
 func GenerateMocks(file string, line int) (mockFile string) {
+	importPathCh := make(chan string)
+	go func() {
+		importPathCh <- importPath(file)
+	}()
 	fset := token.NewFileSet()
 	logger.Printf("Parse file '%s'\n", file)
 	f, err := parser.ParseFile(fset, file, nil, 0)
@@ -29,27 +33,35 @@ func GenerateMocks(file string, line int) (mockFile string) {
 		log.Fatalf("Failed to parse interface. %s", err)
 	}
 
-	modInfo, err := gomod.FindMod(file)
-	if err != nil {
-		log.Fatalf("Failed to find module. %s", err)
-	}
-	importPath := modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(file)))
+	impPath := <-importPathCh
+	logger.Printf("Add own package %s to imports", impPath)
+	i.Imports = append(i.Imports, model.Import{Path: impPath})
 
-	logger.Printf("Add own package to imports")
-	i.Imports = append(i.Imports, model.Import{Path: importPath})
-
+	mockFilePathCh := make(chan string)
+	go func() {
+		mockFilePath := pathhelper.MockFilePath(file, i.PackageName, i.Name)
+		logger.Printf("Create mock file: '%s'", mockFilePath)
+		if err := os.MkdirAll(path.Dir(mockFilePath), os.ModePerm); err != nil {
+			log.Fatalf("Failed to create directory '%s'. %s", path.Dir(mockFilePath), err)
+		}
+		mockFilePathCh <- mockFilePath
+	}()
 	m, err := generate.GenerateMock(i)
 	if err != nil {
 		log.Fatalf("Failed to generate mock. %s", err)
 	}
 
-	mockFilePath := pathhelper.MockFilePath(file, i.PackageName, i.Name)
-	logger.Printf("Create mock file: '%s'", mockFilePath)
-	if err := os.MkdirAll(path.Dir(mockFilePath), os.ModePerm); err != nil {
-		log.Fatalf("Failed to create directory '%s'. %s", path.Dir(mockFilePath), err)
-	}
-	if err := os.WriteFile(mockFilePath, []byte(m), 0644); err != nil {
+	mockFilePath := <-mockFilePathCh
+	if err := os.WriteFile(mockFilePath, m, 0644); err != nil {
 		log.Fatalf("Failed to write mock file '%s'. %s", mockFilePath, err)
 	}
 	return mockFilePath
+}
+
+func importPath(file string) string {
+	modInfo, err := gomod.FindMod(file)
+	if err != nil {
+		log.Fatalf("Failed to find module. %s", err)
+	}
+	return modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(file)))
 }

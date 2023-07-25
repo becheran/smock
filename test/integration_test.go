@@ -23,8 +23,21 @@ const testGoldenFileDir = "golden_test"
 
 var generate = flag.Bool("generate", false, "generate golden files")
 
+// BenchmarkGenerate-12    	     178	   6704438 ns/op	 1758730 B/op	   39041 allocs/op
+func BenchmarkGenerate(b *testing.B) {
+	os.Chdir(testPackagePath)
+	os.RemoveAll("./test_package/testpackage_mock")
+	interfaces := getAnnotatedInterfaces()
+
+	for i := 0; i < b.N; i++ {
+		for _, i := range interfaces {
+			smock.GenerateMocks(i.File, i.Line)
+		}
+	}
+}
+
 func TestGenerate(t *testing.T) {
-	logger.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+	logger.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile))
 	os.Chdir(testPackagePath)
 	os.RemoveAll("./test_package/testpackage_mock")
 	for _, i := range getAnnotatedInterfaces() {

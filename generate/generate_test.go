@@ -116,7 +116,7 @@ func TestGenerateMock(t *testing.T) {
 	res, err := generate.GenerateMock(input)
 
 	require.Nil(t, err)
-	assert.Equal(t, expOutputWithoutTypes, res)
+	assert.Equal(t, expOutputWithoutTypes, string(res))
 }
 
 const expOutputWithTypes = `// DO NOT EDIT
@@ -200,5 +200,5 @@ func TestGenerateMockWithTypes(t *testing.T) {
 	res, err := generate.GenerateMock(input)
 
 	require.Nil(t, err)
-	assert.Equal(t, expOutputWithTypes, res)
+	assert.Equal(t, expOutputWithTypes, string(res))
 }
