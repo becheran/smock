@@ -16,6 +16,7 @@ import (
 	"github.com/becheran/smock/logger"
 	"github.com/becheran/smock/smock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testPackagePath = "./test_package"
@@ -25,7 +26,7 @@ var generate = flag.Bool("generate", false, "generate golden files")
 
 // BenchmarkGenerate-12    	     178	   6704438 ns/op	 1758730 B/op	   39041 allocs/op
 func BenchmarkGenerate(b *testing.B) {
-	os.Chdir(testPackagePath)
+	require.Nil(b, os.Chdir(testPackagePath))
 	os.RemoveAll("./test_package/testpackage_mock")
 	interfaces := getAnnotatedInterfaces()
 
@@ -38,7 +39,7 @@ func BenchmarkGenerate(b *testing.B) {
 
 func TestGenerate(t *testing.T) {
 	logger.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile))
-	os.Chdir(testPackagePath)
+	require.Nil(t, os.Chdir(testPackagePath))
 	os.RemoveAll("./test_package/testpackage_mock")
 	for _, i := range getAnnotatedInterfaces() {
 		fmt.Printf("Generate mocks for %s:%d\n", i.File, i.Line)
