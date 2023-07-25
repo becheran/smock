@@ -142,6 +142,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 	var packagesErr error
 	for _, ref := range referencedInterfaces {
 		packageId := ref.PackageID
+		mux.Lock()
 		if _, ok := packages[packageId]; !ok {
 			packages[packageId] = nil
 
@@ -158,6 +159,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 				}
 			}()
 		}
+		mux.Unlock()
 	}
 
 	wg.Wait()
