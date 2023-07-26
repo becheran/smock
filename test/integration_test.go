@@ -68,10 +68,14 @@ func TestGenerate(t *testing.T) {
 			}
 			generated, err := io.ReadAll(source)
 			assert.Nil(t, err)
-			assert.Equal(t, string(golden), string(generated))
+			assert.Equal(t, ToUnixLineEndings(string(golden)), ToUnixLineEndings(string(generated)))
 		}
 		source.Close()
 	}
+}
+
+func ToUnixLineEndings(s string) string {
+	return strings.ReplaceAll(s, "\r\n", "\n")
 }
 
 func goldenFilePath(file string) string {
