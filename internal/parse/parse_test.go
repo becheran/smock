@@ -6,8 +6,8 @@ import (
 	"go/token"
 	"testing"
 
-	"github.com/becheran/smock/model"
-	"github.com/becheran/smock/parse"
+	"github.com/becheran/smock/internal/model"
+	"github.com/becheran/smock/internal/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -9,8 +9,8 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/model"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/model"
 )
 
 func parsePackage(packageId string, imports []*ast.ImportSpec, dir string) (pkg *ast.Package, err error) {

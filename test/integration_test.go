@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/smock"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/smock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

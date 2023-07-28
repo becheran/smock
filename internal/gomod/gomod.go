@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/becheran/smock/pathhelper"
+	"github.com/becheran/smock/internal/pathhelper"
 )
 
 var rootDir = "."

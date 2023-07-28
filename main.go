@@ -8,8 +8,8 @@ import (
 	"runtime/debug"
 	"strconv"
 
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/smock"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/smock"
 )
 
 func main() {

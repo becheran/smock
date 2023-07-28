@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/becheran/smock/pathhelper"
+	"github.com/becheran/smock/internal/pathhelper"
 	"github.com/stretchr/testify/assert"
 )
 

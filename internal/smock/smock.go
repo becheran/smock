@@ -7,12 +7,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/becheran/smock/generate"
-	"github.com/becheran/smock/gomod"
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/model"
-	"github.com/becheran/smock/parse"
-	"github.com/becheran/smock/pathhelper"
+	"github.com/becheran/smock/internal/generate"
+	"github.com/becheran/smock/internal/gomod"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/model"
+	"github.com/becheran/smock/internal/parse"
+	"github.com/becheran/smock/internal/pathhelper"
 )
 
 // GenerateMocks for interface at file and line

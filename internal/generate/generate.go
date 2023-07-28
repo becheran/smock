@@ -5,8 +5,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/model"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/model"
 )
 
 func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {

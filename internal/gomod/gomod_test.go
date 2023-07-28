@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/becheran/smock/gomod"
-	"github.com/becheran/smock/pathhelper"
+	"github.com/becheran/smock/internal/gomod"
+	"github.com/becheran/smock/internal/pathhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

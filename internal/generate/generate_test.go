@@ -3,8 +3,8 @@ package generate_test
 import (
 	"testing"
 
-	"github.com/becheran/smock/generate"
-	"github.com/becheran/smock/model"
+	"github.com/becheran/smock/internal/generate"
+	"github.com/becheran/smock/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

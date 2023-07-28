@@ -7,9 +7,9 @@ import (
 	"path"
 	"sync"
 
-	"github.com/becheran/smock/logger"
-	"github.com/becheran/smock/model"
-	"github.com/becheran/smock/pathhelper"
+	"github.com/becheran/smock/internal/logger"
+	"github.com/becheran/smock/internal/model"
+	"github.com/becheran/smock/internal/pathhelper"
 	"golang.org/x/exp/slices"
 )
 

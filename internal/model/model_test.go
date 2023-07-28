@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/becheran/smock/model"
+	"github.com/becheran/smock/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
