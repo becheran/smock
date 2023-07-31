@@ -96,7 +96,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if len(f.Results) > 0 {
 			retStm = "return "
 		}
-		w.P("%sm.f%s(%s)", retStm, f.Name, f.Params.IdentString(model.IdentTypeInput))
+		w.P("%sm.f%s(%s)", retStm, f.Name, f.Params.IdentString(model.IdentTypeInput, true))
 		w.EndIdent()
 		w.P("} else {")
 		w.Ident()
@@ -105,7 +105,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if len(f.Params) > 0 {
 			format := strings.Repeat("%+v, ", len(f.Params))
 			format = format[:len(format)-2]
-			args = fmt.Sprintf(`fmt.Sprintf("%s", %s)`, format, f.Params.IdentString(model.IdentTypeInput))
+			args = fmt.Sprintf(`fmt.Sprintf("%s", %s)`, format, f.Params.IdentString(model.IdentTypeInput, false))
 		}
 		w.P(`m.unexpectedCall("%s", %s)`, f.Name, args)
 		w.P(`return`)
@@ -164,7 +164,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if len(f.Results) > 0 {
 			w.P("func (f *%s) Return(%s) {", funcStructWithTypeIdentifier, f.Results.IdentWithTypeString(model.IdentTypeResult))
 			w.Ident()
-			w.P("f.m.f%s = func%s { return %s }", f.Name, f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult))
+			w.P("f.m.f%s = func%s { return %s }", f.Name, f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
 			w.EndIdent()
 			w.P("}")
 			w.P("")

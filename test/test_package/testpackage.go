@@ -38,3 +38,9 @@ type WithTypes[T, B any] interface {
 	Foo(a, b T) B
 	Empty()
 }
+
+//go:generate smock -debug
+type WithLambda interface {
+	Foo(a int, b ...string)
+	Empty()
+}

@@ -320,6 +320,7 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 		identType += tr.resolveType(t.Elt)
 	case *ast.Ellipsis:
 		identType += "..."
+		identType += tr.resolveType(t.Elt)
 	case *ast.FuncType:
 		identType += "func("
 		for _, param := range t.Params.List {

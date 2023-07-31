@@ -55,13 +55,16 @@ func (i IdentList) TypeString(identPrefix IdentType) (res string) {
 	return
 }
 
-func (i IdentList) IdentString(identPrefix IdentType) (res string) {
+func (i IdentList) IdentString(identPrefix IdentType, resolveLambda bool) (res string) {
 	for idx, ident := range i {
 		name := ident.Name
 		if name == "" {
 			name = fmt.Sprintf("%s%d", identPrefix, idx)
 		}
 		res += name
+		if resolveLambda && strings.HasPrefix(ident.Type, "...") {
+			res += "..."
+		}
 		if idx+1 < len(i) {
 			res += ", "
 		}
