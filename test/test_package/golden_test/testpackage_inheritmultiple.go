@@ -21,10 +21,13 @@ func NewMockInheritMultiple(t interface {
 }
 
 type MockInheritMultiple struct {
+	testpackage.InheritMultiple
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fOwn func(i0 int, i1 string) (r0 int, r1 string)
 	fRetType func() (r0 testpackage.MyType)
 	fUseStdType func(fi os.FileInfo) (r0 io.Reader)

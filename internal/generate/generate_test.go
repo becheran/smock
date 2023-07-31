@@ -30,10 +30,13 @@ func NewMockHandler(t interface {
 }
 
 type MockHandler struct {
+	orig.Handler
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fTarget func() (r0 int)
 	fVoid func()
 }
@@ -125,6 +128,7 @@ const expOutputWithTypes = `// DO NOT EDIT
 package orig_mock
 
 import (
+	orig "github.com/becheran/smock/foo/mock"
 	"fmt"
 )
 
@@ -136,10 +140,13 @@ func NewMockHandler[T any, N orig.Number](t interface {
 }
 
 type MockHandler[T any, N orig.Number] struct {
+	orig.Handler[T, N]
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fTarget func(i0 T) (r0 int, r1 N)
 }
 

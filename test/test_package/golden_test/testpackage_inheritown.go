@@ -21,10 +21,13 @@ func NewMockInheritOwn(t interface {
 }
 
 type MockInheritOwn struct {
+	testpackage.InheritOwn
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fRetType func() (r0 testpackage.MyType)
 	fUseStdType func(fi os.FileInfo) (r0 io.Reader)
 }

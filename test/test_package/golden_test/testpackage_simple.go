@@ -19,10 +19,13 @@ func NewMockSimple(t interface {
 }
 
 type MockSimple struct {
+	testpackage.Simple
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fFoo func()
 	fBar func(a int, b string) (r0 string)
 	fBaz func(a string, b string) (r int, r2 int)

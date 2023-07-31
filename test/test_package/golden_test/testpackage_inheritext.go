@@ -19,10 +19,13 @@ func NewMockInheritExt(t interface {
 }
 
 type MockInheritExt struct {
+	testpackage.InheritExt
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fClose func() (r0 error)
 	fRead func(p []byte) (n int, err error)
 	fSeek func(offset int64, whence int) (r0 int64, r1 error)

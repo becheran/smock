@@ -21,10 +21,13 @@ func NewMockExtend(t interface {
 }
 
 type MockExtend struct {
+	testpackage.Extend
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fRetType func() (r0 testpackage.MyType)
 	fUseStdType func(fi os.FileInfo) (r0 io.Reader)
 }

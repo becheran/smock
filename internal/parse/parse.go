@@ -110,29 +110,31 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 		if len(it.Names) != 1 {
 			continue
 		}
-		name := it.Names[0]
-		if !name.IsExported() {
-			continue
-		}
-		logger.Printf("found exported method '%s'", name)
-		switch meth := it.Type.(type) {
-		case *ast.FuncType:
-			getList := func(list *ast.FieldList) []*ast.Field {
-				if list == nil {
-					return nil
-				}
-				return list.List
-			}
-			method := model.Method{
-				Name:       name.String(),
-				TypeParams: identResolver.fieldListToIdent(getList(meth.TypeParams)),
-				Params:     identResolver.fieldListToIdent(getList(meth.Params)),
-				Results:    identResolver.fieldListToIdent(getList(meth.Results)),
-			}
-			i.Methods = append(i.Methods, method)
-		default:
+		meth, ok := it.Type.(*ast.FuncType)
+		if !ok {
 			return model.InterfaceResult{}, fmt.Errorf("unexpected type expression %T", it.Type)
 		}
+
+		name := it.Names[0]
+		if !name.IsExported() {
+			logger.Printf("found unexported method '%s'", name)
+			continue
+		}
+
+		logger.Printf("found exported method '%s'", name)
+		getList := func(list *ast.FieldList) []*ast.Field {
+			if list == nil {
+				return nil
+			}
+			return list.List
+		}
+		method := model.Method{
+			Name:       name.String(),
+			TypeParams: identResolver.fieldListToIdent(getList(meth.TypeParams)),
+			Params:     identResolver.fieldListToIdent(getList(meth.Params)),
+			Results:    identResolver.fieldListToIdent(getList(meth.Results)),
+		}
+		i.Methods = append(i.Methods, method)
 	}
 
 	// TODO: Move to own go function

@@ -4,6 +4,7 @@
 package testpackage_mock
 
 import (
+	testpackage "github.com/test/testpackage"
 	"fmt"
 )
 
@@ -15,10 +16,13 @@ func NewMockWithTypes[T any, B any](t interface {
 }
 
 type MockWithTypes[T any, B any] struct {
+	testpackage.WithTypes[T, B]
+	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
+	
 	fFoo func(a T, b T) (r0 B)
 	fEmpty func()
 }
