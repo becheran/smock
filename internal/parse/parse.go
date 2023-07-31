@@ -117,8 +117,7 @@ func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 
 		name := it.Names[0]
 		if !name.IsExported() {
-			logger.Printf("found unexported method '%s'", name)
-			continue
+			return model.InterfaceResult{}, fmt.Errorf("found unexported method '%s'. Mock creation not possible", name)
 		}
 
 		logger.Printf("found exported method '%s'", name)

@@ -21,8 +21,6 @@ func NewMockExtend(t interface {
 }
 
 type MockExtend struct {
-	testpackage.Extend
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()

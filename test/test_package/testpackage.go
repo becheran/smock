@@ -8,7 +8,6 @@ import (
 //go:generate smock -debug
 type Simple interface {
 	Foo()
-	unexported()
 	Bar(a int, b string) string
 	Baz(a, b string) (r, r2 int)
 	Fun(a, b func(a, b func(o, i string) (f, a int))) (r, r2 func())

@@ -21,8 +21,6 @@ func NewMockInheritMultiple(t interface {
 }
 
 type MockInheritMultiple struct {
-	testpackage.InheritMultiple
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()

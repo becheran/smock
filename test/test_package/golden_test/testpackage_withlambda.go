@@ -19,8 +19,6 @@ func NewMockWithLambda(t interface {
 }
 
 type MockWithLambda struct {
-	testpackage.WithLambda
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()

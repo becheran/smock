@@ -19,8 +19,6 @@ func NewMockSimple(t interface {
 }
 
 type MockSimple struct {
-	testpackage.Simple
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()

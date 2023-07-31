@@ -40,6 +40,9 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.Ident()
 	fmtAlreadyImported := false
 	for _, i := range res.Imports {
+		if hasTypes && i.ImportName() == res.PackageName {
+			continue
+		}
 		if i.ImportName() == "fmt" {
 			fmtAlreadyImported = true
 		}
@@ -73,9 +76,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 
 	w.P("type %s%s struct {", mockedStructName, res.Types.ListTypesWithIdentifiers())
 	w.Ident()
-
-	w.P("%s.%s%s", res.PackageName, res.Name, res.Types.ListIdentifier())
-	w.P("")
 
 	w.P(`t interface {
 		Fatalf(format string, args ...interface{})

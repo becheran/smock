@@ -26,7 +26,6 @@ var X = f(3.14)*2 + c
 type MyInterface interface {
 	Foo(x other.Type, bar, baz *string, r io.Reader, fun func(), funArg func(a, b string, c int) (r0, r1 int)) (o other.Other, oo map[string]SamePackage)
 	Void()
-	unexported() int
 }
 `
 
@@ -44,6 +43,10 @@ type InterfaceWithType[T any, B constraints.Ordered] interface {
 }
 
 type RefMy MyInterface
+
+type Unexported interface {
+	unexported()
+}
 `
 )
 
@@ -93,6 +96,7 @@ func TestParseInterface(t *testing.T) {
 			}}},
 		{src2, 6, "failed to resolve package reference", model.InterfaceResult{}},
 		{src2, 13, "interface 'MyInterface' not found", model.InterfaceResult{}},
+		{src2, 15, "unexported", model.InterfaceResult{}},
 	}
 	for idx, s := range suite {
 		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {

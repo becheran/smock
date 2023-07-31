@@ -19,8 +19,6 @@ func NewMockInheritExt(t interface {
 }
 
 type MockInheritExt struct {
-	testpackage.InheritExt
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()

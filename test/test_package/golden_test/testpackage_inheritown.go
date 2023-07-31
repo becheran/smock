@@ -21,8 +21,6 @@ func NewMockInheritOwn(t interface {
 }
 
 type MockInheritOwn struct {
-	testpackage.InheritOwn
-	
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
