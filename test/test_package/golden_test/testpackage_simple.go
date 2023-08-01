@@ -24,46 +24,51 @@ type MockSimple struct {
 		Helper()
 	}
 	
-	fFoo func()
-	fBar func(a int, b string) (r0 string)
-	fBaz func(a string, b string) (r int, r2 int)
-	fFun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+	vFoo []*struct{fun func(); validateArgs func() bool}
+	vBar []*struct{fun func(a int, b string) (r0 string); validateArgs func(a int, b string) bool}
+	vBaz []*struct{fun func(a string, b string) (r int, r2 int); validateArgs func(a string, b string) bool}
+	vFun []*struct{fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()); validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool}
 }
 
 func (m *MockSimple) Foo() {
-	if m.fFoo != nil {
-		m.fFoo()
-	} else {
-		m.unexpectedCall("Foo", fmt.Sprintf(""))
-		return
+	for _, check := range m.vFoo {
+		if check.validateArgs == nil || check.validateArgs() {
+			check.fun()
+			return
+		}
 	}
+	m.unexpectedCall("Foo", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockSimple) Bar(a int, b string) (r0 string) {
-	if m.fBar != nil {
-		return m.fBar(a, b)
-	} else {
-		m.unexpectedCall("Bar", fmt.Sprintf("%+v, %+v", a, b))
-		return
+	for _, check := range m.vBar {
+		if check.validateArgs == nil || check.validateArgs(a, b) {
+			return check.fun(a, b)
+		}
 	}
+	m.unexpectedCall("Bar", fmt.Sprintf("%+v, %+v", a, b))
+	return
 }
 
 func (m *MockSimple) Baz(a string, b string) (r int, r2 int) {
-	if m.fBaz != nil {
-		return m.fBaz(a, b)
-	} else {
-		m.unexpectedCall("Baz", fmt.Sprintf("%+v, %+v", a, b))
-		return
+	for _, check := range m.vBaz {
+		if check.validateArgs == nil || check.validateArgs(a, b) {
+			return check.fun(a, b)
+		}
 	}
+	m.unexpectedCall("Baz", fmt.Sprintf("%+v, %+v", a, b))
+	return
 }
 
 func (m *MockSimple) Fun(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) {
-	if m.fFun != nil {
-		return m.fFun(a, b)
-	} else {
-		m.unexpectedCall("Fun", fmt.Sprintf("%+v, %+v", a, b))
-		return
+	for _, check := range m.vFun {
+		if check.validateArgs == nil || check.validateArgs(a, b) {
+			return check.fun(a, b)
+		}
 	}
+	m.unexpectedCall("Fun", fmt.Sprintf("%+v, %+v", a, b))
+	return
 }
 
 func (m *MockSimple) WHEN() *MockSimpleWhen {
@@ -81,66 +86,139 @@ type MockSimpleWhen struct {
 	m *MockSimple
 }
 
-func (mh *MockSimpleWhen) Foo() *MockSimpleFooFunc {
-	mh.m.fFoo = func() { return }
-	return &MockSimpleFooFunc{m: mh.m}
+func (mh *MockSimpleWhen) Foo() *MockSimpleFooArgsEval {
+	var validator struct {
+		fun func()
+		validateArgs func() bool
+	}
+	validator.fun = func() { return }
+	mh.m.vFoo = append(mh.m.vFoo, &validator)
+	return &MockSimpleFooArgsEval {
+		fun: &validator.fun,
+	}
 }
 
-type MockSimpleFooFunc struct {
-	m *MockSimple
+type MockSimpleFooArgsEval struct {
+	fun *func()
 }
 
-func (f *MockSimpleFooFunc) Do(do func()) {
-	f.m.fFoo = do
+func (f *MockSimpleFooArgsEval) Do(do func()) {
+	*f.fun = do
 }
 
-func (mh *MockSimpleWhen) Bar() *MockSimpleBarFunc {
-	mh.m.fBar = func(a int, b string) (r0 string) { return }
-	return &MockSimpleBarFunc{m: mh.m}
+func (mh *MockSimpleWhen) Bar() *MockSimpleBarArgs {
+	var validator struct {
+		fun func(a int, b string) (r0 string)
+		validateArgs func(a int, b string) bool
+	}
+	validator.fun = func(a int, b string) (r0 string) { return }
+	mh.m.vBar = append(mh.m.vBar, &validator)
+	return &MockSimpleBarArgs {
+		MockSimpleBarArgsEval: MockSimpleBarArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockSimpleBarFunc struct {
-	m *MockSimple
+type MockSimpleBarArgs struct {
+	MockSimpleBarArgsEval
+	fun *func(a int, b string) (r0 string)
+	validateArgs *func(a int, b string) bool
 }
 
-func (f *MockSimpleBarFunc) Return(r0 string) {
-	f.m.fBar = func(int, string) (string) { return r0 }
+func (f *MockSimpleBarArgs) ExpectArgs(matcha interface{Match(int) bool}, matchb interface{Match(string) bool}) *MockSimpleBarArgsEval {
+	*f.validateArgs = func(a int, b string) bool {
+		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	}
+	return &f.MockSimpleBarArgsEval
 }
 
-func (f *MockSimpleBarFunc) Do(do func(a int, b string) (r0 string)) {
-	f.m.fBar = do
+type MockSimpleBarArgsEval struct {
+	fun *func(a int, b string) (r0 string)
 }
 
-func (mh *MockSimpleWhen) Baz() *MockSimpleBazFunc {
-	mh.m.fBaz = func(a string, b string) (r int, r2 int) { return }
-	return &MockSimpleBazFunc{m: mh.m}
+func (f *MockSimpleBarArgsEval) Return(r0 string) {
+	*f.fun = func(int, string) (string) { return r0 }
 }
 
-type MockSimpleBazFunc struct {
-	m *MockSimple
+func (f *MockSimpleBarArgsEval) Do(do func(a int, b string) (r0 string)) {
+	*f.fun = do
 }
 
-func (f *MockSimpleBazFunc) Return(r int, r2 int) {
-	f.m.fBaz = func(string, string) (int, int) { return r, r2 }
+func (mh *MockSimpleWhen) Baz() *MockSimpleBazArgs {
+	var validator struct {
+		fun func(a string, b string) (r int, r2 int)
+		validateArgs func(a string, b string) bool
+	}
+	validator.fun = func(a string, b string) (r int, r2 int) { return }
+	mh.m.vBaz = append(mh.m.vBaz, &validator)
+	return &MockSimpleBazArgs {
+		MockSimpleBazArgsEval: MockSimpleBazArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-func (f *MockSimpleBazFunc) Do(do func(a string, b string) (r int, r2 int)) {
-	f.m.fBaz = do
+type MockSimpleBazArgs struct {
+	MockSimpleBazArgsEval
+	fun *func(a string, b string) (r int, r2 int)
+	validateArgs *func(a string, b string) bool
 }
 
-func (mh *MockSimpleWhen) Fun() *MockSimpleFunFunc {
-	mh.m.fFun = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) { return }
-	return &MockSimpleFunFunc{m: mh.m}
+func (f *MockSimpleBazArgs) ExpectArgs(matcha interface{Match(string) bool}, matchb interface{Match(string) bool}) *MockSimpleBazArgsEval {
+	*f.validateArgs = func(a string, b string) bool {
+		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	}
+	return &f.MockSimpleBazArgsEval
 }
 
-type MockSimpleFunFunc struct {
-	m *MockSimple
+type MockSimpleBazArgsEval struct {
+	fun *func(a string, b string) (r int, r2 int)
 }
 
-func (f *MockSimpleFunFunc) Return(r func(), r2 func()) {
-	f.m.fFun = func(func(func(string, string) (int, int), func(string, string) (int, int)), func(func(string, string) (int, int), func(string, string) (int, int))) (func(), func()) { return r, r2 }
+func (f *MockSimpleBazArgsEval) Return(r int, r2 int) {
+	*f.fun = func(string, string) (int, int) { return r, r2 }
 }
 
-func (f *MockSimpleFunFunc) Do(do func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())) {
-	f.m.fFun = do
+func (f *MockSimpleBazArgsEval) Do(do func(a string, b string) (r int, r2 int)) {
+	*f.fun = do
+}
+
+func (mh *MockSimpleWhen) Fun() *MockSimpleFunArgs {
+	var validator struct {
+		fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+		validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
+	}
+	validator.fun = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) { return }
+	mh.m.vFun = append(mh.m.vFun, &validator)
+	return &MockSimpleFunArgs {
+		MockSimpleFunArgsEval: MockSimpleFunArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
+}
+
+type MockSimpleFunArgs struct {
+	MockSimpleFunArgsEval
+	fun *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+	validateArgs *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
+}
+
+func (f *MockSimpleFunArgs) ExpectArgs(matcha interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}, matchb interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}) *MockSimpleFunArgsEval {
+	*f.validateArgs = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
+		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	}
+	return &f.MockSimpleFunArgsEval
+}
+
+type MockSimpleFunArgsEval struct {
+	fun *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+}
+
+func (f *MockSimpleFunArgsEval) Return(r func(), r2 func()) {
+	*f.fun = func(func(func(string, string) (int, int), func(string, string) (int, int)), func(func(string, string) (int, int), func(string, string) (int, int))) (func(), func()) { return r, r2 }
+}
+
+func (f *MockSimpleFunArgsEval) Do(do func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())) {
+	*f.fun = do
 }

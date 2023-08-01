@@ -24,36 +24,39 @@ type MockInheritExt struct {
 		Helper()
 	}
 	
-	fClose func() (r0 error)
-	fRead func(p []byte) (n int, err error)
-	fSeek func(offset int64, whence int) (r0 int64, r1 error)
+	vClose []*struct{fun func() (r0 error); validateArgs func() bool}
+	vRead []*struct{fun func(p []byte) (n int, err error); validateArgs func(p []byte) bool}
+	vSeek []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); validateArgs func(offset int64, whence int) bool}
 }
 
 func (m *MockInheritExt) Close() (r0 error) {
-	if m.fClose != nil {
-		return m.fClose()
-	} else {
-		m.unexpectedCall("Close", fmt.Sprintf(""))
-		return
+	for _, check := range m.vClose {
+		if check.validateArgs == nil || check.validateArgs() {
+			return check.fun()
+		}
 	}
+	m.unexpectedCall("Close", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockInheritExt) Read(p []byte) (n int, err error) {
-	if m.fRead != nil {
-		return m.fRead(p)
-	} else {
-		m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
-		return
+	for _, check := range m.vRead {
+		if check.validateArgs == nil || check.validateArgs(p) {
+			return check.fun(p)
+		}
 	}
+	m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
+	return
 }
 
 func (m *MockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error) {
-	if m.fSeek != nil {
-		return m.fSeek(offset, whence)
-	} else {
-		m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
-		return
+	for _, check := range m.vSeek {
+		if check.validateArgs == nil || check.validateArgs(offset, whence) {
+			return check.fun(offset, whence)
+		}
 	}
+	m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
+	return
 }
 
 func (m *MockInheritExt) WHEN() *MockInheritExtWhen {
@@ -71,53 +74,104 @@ type MockInheritExtWhen struct {
 	m *MockInheritExt
 }
 
-func (mh *MockInheritExtWhen) Close() *MockInheritExtCloseFunc {
-	mh.m.fClose = func() (r0 error) { return }
-	return &MockInheritExtCloseFunc{m: mh.m}
+func (mh *MockInheritExtWhen) Close() *MockInheritExtCloseArgsEval {
+	var validator struct {
+		fun func() (r0 error)
+		validateArgs func() bool
+	}
+	validator.fun = func() (r0 error) { return }
+	mh.m.vClose = append(mh.m.vClose, &validator)
+	return &MockInheritExtCloseArgsEval {
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritExtCloseFunc struct {
-	m *MockInheritExt
+type MockInheritExtCloseArgsEval struct {
+	fun *func() (r0 error)
 }
 
-func (f *MockInheritExtCloseFunc) Return(r0 error) {
-	f.m.fClose = func() (error) { return r0 }
+func (f *MockInheritExtCloseArgsEval) Return(r0 error) {
+	*f.fun = func() (error) { return r0 }
 }
 
-func (f *MockInheritExtCloseFunc) Do(do func() (r0 error)) {
-	f.m.fClose = do
+func (f *MockInheritExtCloseArgsEval) Do(do func() (r0 error)) {
+	*f.fun = do
 }
 
-func (mh *MockInheritExtWhen) Read() *MockInheritExtReadFunc {
-	mh.m.fRead = func(p []byte) (n int, err error) { return }
-	return &MockInheritExtReadFunc{m: mh.m}
+func (mh *MockInheritExtWhen) Read() *MockInheritExtReadArgs {
+	var validator struct {
+		fun func(p []byte) (n int, err error)
+		validateArgs func(p []byte) bool
+	}
+	validator.fun = func(p []byte) (n int, err error) { return }
+	mh.m.vRead = append(mh.m.vRead, &validator)
+	return &MockInheritExtReadArgs {
+		MockInheritExtReadArgsEval: MockInheritExtReadArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritExtReadFunc struct {
-	m *MockInheritExt
+type MockInheritExtReadArgs struct {
+	MockInheritExtReadArgsEval
+	fun *func(p []byte) (n int, err error)
+	validateArgs *func(p []byte) bool
 }
 
-func (f *MockInheritExtReadFunc) Return(n int, err error) {
-	f.m.fRead = func([]byte) (int, error) { return n, err }
+func (f *MockInheritExtReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritExtReadArgsEval {
+	*f.validateArgs = func(p []byte) bool {
+		return (matchp == nil || matchp.Match(p))
+	}
+	return &f.MockInheritExtReadArgsEval
 }
 
-func (f *MockInheritExtReadFunc) Do(do func(p []byte) (n int, err error)) {
-	f.m.fRead = do
+type MockInheritExtReadArgsEval struct {
+	fun *func(p []byte) (n int, err error)
 }
 
-func (mh *MockInheritExtWhen) Seek() *MockInheritExtSeekFunc {
-	mh.m.fSeek = func(offset int64, whence int) (r0 int64, r1 error) { return }
-	return &MockInheritExtSeekFunc{m: mh.m}
+func (f *MockInheritExtReadArgsEval) Return(n int, err error) {
+	*f.fun = func([]byte) (int, error) { return n, err }
 }
 
-type MockInheritExtSeekFunc struct {
-	m *MockInheritExt
+func (f *MockInheritExtReadArgsEval) Do(do func(p []byte) (n int, err error)) {
+	*f.fun = do
 }
 
-func (f *MockInheritExtSeekFunc) Return(r0 int64, r1 error) {
-	f.m.fSeek = func(int64, int) (int64, error) { return r0, r1 }
+func (mh *MockInheritExtWhen) Seek() *MockInheritExtSeekArgs {
+	var validator struct {
+		fun func(offset int64, whence int) (r0 int64, r1 error)
+		validateArgs func(offset int64, whence int) bool
+	}
+	validator.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
+	mh.m.vSeek = append(mh.m.vSeek, &validator)
+	return &MockInheritExtSeekArgs {
+		MockInheritExtSeekArgsEval: MockInheritExtSeekArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-func (f *MockInheritExtSeekFunc) Do(do func(offset int64, whence int) (r0 int64, r1 error)) {
-	f.m.fSeek = do
+type MockInheritExtSeekArgs struct {
+	MockInheritExtSeekArgsEval
+	fun *func(offset int64, whence int) (r0 int64, r1 error)
+	validateArgs *func(offset int64, whence int) bool
+}
+
+func (f *MockInheritExtSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritExtSeekArgsEval {
+	*f.validateArgs = func(offset int64, whence int) bool {
+		return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+	}
+	return &f.MockInheritExtSeekArgsEval
+}
+
+type MockInheritExtSeekArgsEval struct {
+	fun *func(offset int64, whence int) (r0 int64, r1 error)
+}
+
+func (f *MockInheritExtSeekArgsEval) Return(r0 int64, r1 error) {
+	*f.fun = func(int64, int) (int64, error) { return r0, r1 }
+}
+
+func (f *MockInheritExtSeekArgsEval) Do(do func(offset int64, whence int) (r0 int64, r1 error)) {
+	*f.fun = do
 }

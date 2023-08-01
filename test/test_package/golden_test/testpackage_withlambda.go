@@ -24,26 +24,30 @@ type MockWithLambda struct {
 		Helper()
 	}
 	
-	fFoo func(a int, b ...string)
-	fEmpty func()
+	vFoo []*struct{fun func(a int, b ...string); validateArgs func(a int, b ...string) bool}
+	vEmpty []*struct{fun func(); validateArgs func() bool}
 }
 
 func (m *MockWithLambda) Foo(a int, b ...string) {
-	if m.fFoo != nil {
-		m.fFoo(a, b...)
-	} else {
-		m.unexpectedCall("Foo", fmt.Sprintf("%+v, %+v", a, b))
-		return
+	for _, check := range m.vFoo {
+		if check.validateArgs == nil || check.validateArgs(a, b...) {
+			check.fun(a, b...)
+			return
+		}
 	}
+	m.unexpectedCall("Foo", fmt.Sprintf("%+v, %+v", a, b))
+	return
 }
 
 func (m *MockWithLambda) Empty() {
-	if m.fEmpty != nil {
-		m.fEmpty()
-	} else {
-		m.unexpectedCall("Empty", fmt.Sprintf(""))
-		return
+	for _, check := range m.vEmpty {
+		if check.validateArgs == nil || check.validateArgs() {
+			check.fun()
+			return
+		}
 	}
+	m.unexpectedCall("Empty", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockWithLambda) WHEN() *MockWithLambdaWhen {
@@ -61,28 +65,57 @@ type MockWithLambdaWhen struct {
 	m *MockWithLambda
 }
 
-func (mh *MockWithLambdaWhen) Foo() *MockWithLambdaFooFunc {
-	mh.m.fFoo = func(a int, b ...string) { return }
-	return &MockWithLambdaFooFunc{m: mh.m}
+func (mh *MockWithLambdaWhen) Foo() *MockWithLambdaFooArgs {
+	var validator struct {
+		fun func(a int, b ...string)
+		validateArgs func(a int, b ...string) bool
+	}
+	validator.fun = func(a int, b ...string) { return }
+	mh.m.vFoo = append(mh.m.vFoo, &validator)
+	return &MockWithLambdaFooArgs {
+		MockWithLambdaFooArgsEval: MockWithLambdaFooArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockWithLambdaFooFunc struct {
-	m *MockWithLambda
+type MockWithLambdaFooArgs struct {
+	MockWithLambdaFooArgsEval
+	fun *func(a int, b ...string)
+	validateArgs *func(a int, b ...string) bool
 }
 
-func (f *MockWithLambdaFooFunc) Do(do func(a int, b ...string)) {
-	f.m.fFoo = do
+func (f *MockWithLambdaFooArgs) ExpectArgs(matcha interface{Match(int) bool}, matchb interface{Match(...string) bool}) *MockWithLambdaFooArgsEval {
+	*f.validateArgs = func(a int, b ...string) bool {
+		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b...))
+	}
+	return &f.MockWithLambdaFooArgsEval
 }
 
-func (mh *MockWithLambdaWhen) Empty() *MockWithLambdaEmptyFunc {
-	mh.m.fEmpty = func() { return }
-	return &MockWithLambdaEmptyFunc{m: mh.m}
+type MockWithLambdaFooArgsEval struct {
+	fun *func(a int, b ...string)
 }
 
-type MockWithLambdaEmptyFunc struct {
-	m *MockWithLambda
+func (f *MockWithLambdaFooArgsEval) Do(do func(a int, b ...string)) {
+	*f.fun = do
 }
 
-func (f *MockWithLambdaEmptyFunc) Do(do func()) {
-	f.m.fEmpty = do
+func (mh *MockWithLambdaWhen) Empty() *MockWithLambdaEmptyArgsEval {
+	var validator struct {
+		fun func()
+		validateArgs func() bool
+	}
+	validator.fun = func() { return }
+	mh.m.vEmpty = append(mh.m.vEmpty, &validator)
+	return &MockWithLambdaEmptyArgsEval {
+		fun: &validator.fun,
+	}
+}
+
+type MockWithLambdaEmptyArgsEval struct {
+	fun *func()
+}
+
+func (f *MockWithLambdaEmptyArgsEval) Do(do func()) {
+	*f.fun = do
 }

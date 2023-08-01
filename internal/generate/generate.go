@@ -22,7 +22,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
 	whenStructName := mockedStructName + "When"
 	whenStructNameWithTypeIdentifier := fmt.Sprintf("%s%s", whenStructName, res.Types.ListIdentifier())
-
 	w := newWriter()
 
 	version := "unknown"
@@ -84,7 +83,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("")
 
 	for _, m := range res.Methods {
-		w.P("f%s func%s", m.Name, m.Signature())
+		w.P("v%s []*struct{fun func%s; validateArgs func(%s) bool}", m.Name, m.Signature(), m.Params.IdentWithTypeString(model.IdentTypeInput))
 	}
 	w.EndIdent()
 	w.P("}")
@@ -93,16 +92,20 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	for _, f := range res.Methods {
 		w.P("func (m *%s) %s%s {", mockedStructWithTypeIdentifier, f.Name, f.Signature())
 		w.Ident()
-		w.P("if m.f%s != nil {", f.Name)
+		w.P("for _, check := range m.v%s {", f.Name)
 		w.Ident()
-		retStm := ""
+		w.P("if check.validateArgs == nil || check.validateArgs(%s) {", f.Params.IdentString(model.IdentTypeInput, true))
+		w.Ident()
 		if len(f.Results) > 0 {
-			retStm = "return "
+			w.P("return check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
+		} else {
+			w.P("check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
+			w.P("return")
 		}
-		w.P("%sm.f%s(%s)", retStm, f.Name, f.Params.IdentString(model.IdentTypeInput, true))
 		w.EndIdent()
-		w.P("} else {")
-		w.Ident()
+		w.P("}")
+		w.EndIdent()
+		w.P("}")
 
 		args := `fmt.Sprintf("")`
 		if len(f.Params) > 0 {
@@ -112,8 +115,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		}
 		w.P(`m.unexpectedCall("%s", %s)`, f.Name, args)
 		w.P(`return`)
-		w.EndIdent()
-		w.P("}")
 		w.EndIdent()
 		w.P("}")
 		w.P("")
@@ -146,36 +147,114 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("")
 
 	for idx, f := range res.Methods {
-		funcStruct := fmt.Sprintf("%s%sFunc", mockedStructName, f.Name)
-		funcStructWithTypeIdentifier := fmt.Sprintf("%s%s", funcStruct, res.Types.ListIdentifier())
+		whenArgsStruct := fmt.Sprintf("%s%sArgs", mockedStructName, f.Name)
+		whenArgsStructRef := fmt.Sprintf("%s%s", whenArgsStruct, res.Types.ListIdentifier())
+		whenNoArgsStruct := fmt.Sprintf("%sEval", whenArgsStruct)
+		whenNoArgsStructRef := fmt.Sprintf("%s%s", whenNoArgsStruct, res.Types.ListIdentifier())
 
-		w.P("func (mh *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, funcStructWithTypeIdentifier)
+		hasParams := len(f.Params) > 0
+		hasReturnValues := len(f.Results) > 0
+
+		ref := whenNoArgsStructRef
+		if hasParams {
+			ref = whenArgsStructRef
+		}
+		w.P("func (mh *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
 		w.Ident()
-		w.P("mh.m.f%s = func%s { return }", f.Name, f.Signature())
-		w.P("return &%s{m: mh.m}", funcStructWithTypeIdentifier)
+
+		w.P("var validator struct {")
+		w.Ident()
+		w.P("fun func%s", f.Signature())
+		w.P("validateArgs func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
 		w.EndIdent()
 		w.P("}")
-		w.P("")
-
-		w.P("type %s%s struct {", funcStruct, res.Types.ListTypesWithIdentifiers())
-		w.Ident()
-		w.P("m *%s", mockedStructWithTypeIdentifier)
-		w.EndIdent()
-		w.P("}")
-		w.P("")
-
-		if len(f.Results) > 0 {
-			w.P("func (f *%s) Return(%s) {", funcStructWithTypeIdentifier, f.Results.IdentWithTypeString(model.IdentTypeResult))
+		w.P("validator.fun = func%s { return }", f.Signature())
+		w.P("mh.m.v%s = append(mh.m.v%s, &validator)", f.Name, f.Name)
+		if hasParams {
+			w.P("return &%s {", whenArgsStructRef)
 			w.Ident()
-			w.P("f.m.f%s = func%s { return %s }", f.Name, f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
+			w.P("%s: %s{fun: &validator.fun},", whenNoArgsStruct, whenNoArgsStructRef)
+			w.P("validateArgs: &validator.validateArgs,")
+		} else {
+			w.P("return &%s {", whenNoArgsStructRef)
+			w.Ident()
+		}
+		w.P("fun: &validator.fun,")
+		w.EndIdent()
+		w.P("}")
+		w.EndIdent()
+		w.P("}")
+		w.P("")
+
+		if hasParams {
+			w.P("type %s%s struct {", whenArgsStruct, res.Types.ListTypesWithIdentifiers())
+			w.Ident()
+			w.P("%s", whenNoArgsStructRef)
+			w.P("fun *func%s", f.Signature())
+			w.P("validateArgs *func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
+			w.EndIdent()
+			w.P("}")
+			w.P("")
+
+			args := ""
+			for idx, arg := range f.Params {
+				name := arg.Name
+				if name == "" {
+					name = fmt.Sprintf("_%d", idx)
+				}
+				args += fmt.Sprintf("match%s interface{Match(%s) bool}", name, arg.Type)
+				if idx+1 < len(f.Params) {
+					args += ", "
+				}
+			}
+			w.P("func (f *%s) ExpectArgs(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
+			w.Ident()
+			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeString(model.IdentTypeInput))
+			w.Ident()
+			matchString := ""
+			for idx, arg := range f.Params {
+				name := arg.Name
+				input := arg.Name
+				if name == "" {
+					name = fmt.Sprintf("_%d", idx)
+					input = fmt.Sprintf("i%d", idx)
+				}
+				if strings.HasPrefix(arg.Type, "...") {
+					input += "..."
+				}
+				matchString += fmt.Sprintf("(match%s == nil || match%s.Match(%s))", name, name, input)
+				if idx+1 < len(f.Params) {
+					matchString += " && "
+				}
+			}
+			w.P("return %s", matchString)
+			w.EndIdent()
+			w.P("}")
+			w.P("return &f.%s", whenNoArgsStruct)
 			w.EndIdent()
 			w.P("}")
 			w.P("")
 		}
 
-		w.P("func (f *%s) Do(do func%s) {", funcStructWithTypeIdentifier, f.Signature())
+		w.P("type %s%s struct {", whenNoArgsStruct, res.Types.ListTypesWithIdentifiers())
 		w.Ident()
-		w.P("f.m.f%s = do", f.Name)
+		w.P("fun *func%s", f.Signature())
+		w.EndIdent()
+		w.P("}")
+		w.P("")
+
+		if hasReturnValues {
+			w.P("func (f *%s) Return(%s) {", whenNoArgsStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult))
+			w.Ident()
+			w.P("*f.fun = func%s { return %s }", f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
+			w.EndIdent()
+			w.P("}")
+			w.P("")
+		}
+
+		w.P("func (f *%s) Do(do func%s) {", whenNoArgsStructRef, f.Signature())
+		w.Ident()
+		w.P("*f.fun = do")
 		w.EndIdent()
 		w.P("}")
 		if idx < len(res.Methods)-1 {

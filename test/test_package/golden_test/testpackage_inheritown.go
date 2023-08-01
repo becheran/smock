@@ -26,26 +26,28 @@ type MockInheritOwn struct {
 		Helper()
 	}
 	
-	fRetType func() (r0 testpackage.MyType)
-	fUseStdType func(fi os.FileInfo) (r0 io.Reader)
+	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool}
+	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool}
 }
 
 func (m *MockInheritOwn) RetType() (r0 testpackage.MyType) {
-	if m.fRetType != nil {
-		return m.fRetType()
-	} else {
-		m.unexpectedCall("RetType", fmt.Sprintf(""))
-		return
+	for _, check := range m.vRetType {
+		if check.validateArgs == nil || check.validateArgs() {
+			return check.fun()
+		}
 	}
+	m.unexpectedCall("RetType", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
-	if m.fUseStdType != nil {
-		return m.fUseStdType(fi)
-	} else {
-		m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
-		return
+	for _, check := range m.vUseStdType {
+		if check.validateArgs == nil || check.validateArgs(fi) {
+			return check.fun(fi)
+		}
 	}
+	m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
+	return
 }
 
 func (m *MockInheritOwn) WHEN() *MockInheritOwnWhen {
@@ -63,36 +65,65 @@ type MockInheritOwnWhen struct {
 	m *MockInheritOwn
 }
 
-func (mh *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeFunc {
-	mh.m.fRetType = func() (r0 testpackage.MyType) { return }
-	return &MockInheritOwnRetTypeFunc{m: mh.m}
+func (mh *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
+	var validator struct {
+		fun func() (r0 testpackage.MyType)
+		validateArgs func() bool
+	}
+	validator.fun = func() (r0 testpackage.MyType) { return }
+	mh.m.vRetType = append(mh.m.vRetType, &validator)
+	return &MockInheritOwnRetTypeArgsEval {
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritOwnRetTypeFunc struct {
-	m *MockInheritOwn
+type MockInheritOwnRetTypeArgsEval struct {
+	fun *func() (r0 testpackage.MyType)
 }
 
-func (f *MockInheritOwnRetTypeFunc) Return(r0 testpackage.MyType) {
-	f.m.fRetType = func() (testpackage.MyType) { return r0 }
+func (f *MockInheritOwnRetTypeArgsEval) Return(r0 testpackage.MyType) {
+	*f.fun = func() (testpackage.MyType) { return r0 }
 }
 
-func (f *MockInheritOwnRetTypeFunc) Do(do func() (r0 testpackage.MyType)) {
-	f.m.fRetType = do
+func (f *MockInheritOwnRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
+	*f.fun = do
 }
 
-func (mh *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeFunc {
-	mh.m.fUseStdType = func(fi os.FileInfo) (r0 io.Reader) { return }
-	return &MockInheritOwnUseStdTypeFunc{m: mh.m}
+func (mh *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
+	var validator struct {
+		fun func(fi os.FileInfo) (r0 io.Reader)
+		validateArgs func(fi os.FileInfo) bool
+	}
+	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+	mh.m.vUseStdType = append(mh.m.vUseStdType, &validator)
+	return &MockInheritOwnUseStdTypeArgs {
+		MockInheritOwnUseStdTypeArgsEval: MockInheritOwnUseStdTypeArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritOwnUseStdTypeFunc struct {
-	m *MockInheritOwn
+type MockInheritOwnUseStdTypeArgs struct {
+	MockInheritOwnUseStdTypeArgsEval
+	fun *func(fi os.FileInfo) (r0 io.Reader)
+	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (f *MockInheritOwnUseStdTypeFunc) Return(r0 io.Reader) {
-	f.m.fUseStdType = func(os.FileInfo) (io.Reader) { return r0 }
+func (f *MockInheritOwnUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockInheritOwnUseStdTypeArgsEval {
+	*f.validateArgs = func(fi os.FileInfo) bool {
+		return (matchfi == nil || matchfi.Match(fi))
+	}
+	return &f.MockInheritOwnUseStdTypeArgsEval
 }
 
-func (f *MockInheritOwnUseStdTypeFunc) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
-	f.m.fUseStdType = do
+type MockInheritOwnUseStdTypeArgsEval struct {
+	fun *func(fi os.FileInfo) (r0 io.Reader)
+}
+
+func (f *MockInheritOwnUseStdTypeArgsEval) Return(r0 io.Reader) {
+	*f.fun = func(os.FileInfo) (io.Reader) { return r0 }
+}
+
+func (f *MockInheritOwnUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
+	*f.fun = do
 }

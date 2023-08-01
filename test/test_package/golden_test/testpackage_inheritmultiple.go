@@ -26,66 +26,72 @@ type MockInheritMultiple struct {
 		Helper()
 	}
 	
-	fOwn func(i0 int, i1 string) (r0 int, r1 string)
-	fRetType func() (r0 testpackage.MyType)
-	fUseStdType func(fi os.FileInfo) (r0 io.Reader)
-	fClose func() (r0 error)
-	fRead func(p []byte) (n int, err error)
-	fSeek func(offset int64, whence int) (r0 int64, r1 error)
+	vOwn []*struct{fun func(i0 int, i1 string) (r0 int, r1 string); validateArgs func(i0 int, i1 string) bool}
+	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool}
+	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool}
+	vClose []*struct{fun func() (r0 error); validateArgs func() bool}
+	vRead []*struct{fun func(p []byte) (n int, err error); validateArgs func(p []byte) bool}
+	vSeek []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); validateArgs func(offset int64, whence int) bool}
 }
 
 func (m *MockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
-	if m.fOwn != nil {
-		return m.fOwn(i0, i1)
-	} else {
-		m.unexpectedCall("Own", fmt.Sprintf("%+v, %+v", i0, i1))
-		return
+	for _, check := range m.vOwn {
+		if check.validateArgs == nil || check.validateArgs(i0, i1) {
+			return check.fun(i0, i1)
+		}
 	}
+	m.unexpectedCall("Own", fmt.Sprintf("%+v, %+v", i0, i1))
+	return
 }
 
 func (m *MockInheritMultiple) RetType() (r0 testpackage.MyType) {
-	if m.fRetType != nil {
-		return m.fRetType()
-	} else {
-		m.unexpectedCall("RetType", fmt.Sprintf(""))
-		return
+	for _, check := range m.vRetType {
+		if check.validateArgs == nil || check.validateArgs() {
+			return check.fun()
+		}
 	}
+	m.unexpectedCall("RetType", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
-	if m.fUseStdType != nil {
-		return m.fUseStdType(fi)
-	} else {
-		m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
-		return
+	for _, check := range m.vUseStdType {
+		if check.validateArgs == nil || check.validateArgs(fi) {
+			return check.fun(fi)
+		}
 	}
+	m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
+	return
 }
 
 func (m *MockInheritMultiple) Close() (r0 error) {
-	if m.fClose != nil {
-		return m.fClose()
-	} else {
-		m.unexpectedCall("Close", fmt.Sprintf(""))
-		return
+	for _, check := range m.vClose {
+		if check.validateArgs == nil || check.validateArgs() {
+			return check.fun()
+		}
 	}
+	m.unexpectedCall("Close", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockInheritMultiple) Read(p []byte) (n int, err error) {
-	if m.fRead != nil {
-		return m.fRead(p)
-	} else {
-		m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
-		return
+	for _, check := range m.vRead {
+		if check.validateArgs == nil || check.validateArgs(p) {
+			return check.fun(p)
+		}
 	}
+	m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
+	return
 }
 
 func (m *MockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 error) {
-	if m.fSeek != nil {
-		return m.fSeek(offset, whence)
-	} else {
-		m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
-		return
+	for _, check := range m.vSeek {
+		if check.validateArgs == nil || check.validateArgs(offset, whence) {
+			return check.fun(offset, whence)
+		}
 	}
+	m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
+	return
 }
 
 func (m *MockInheritMultiple) WHEN() *MockInheritMultipleWhen {
@@ -103,104 +109,206 @@ type MockInheritMultipleWhen struct {
 	m *MockInheritMultiple
 }
 
-func (mh *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnFunc {
-	mh.m.fOwn = func(i0 int, i1 string) (r0 int, r1 string) { return }
-	return &MockInheritMultipleOwnFunc{m: mh.m}
+func (mh *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnArgs {
+	var validator struct {
+		fun func(i0 int, i1 string) (r0 int, r1 string)
+		validateArgs func(i0 int, i1 string) bool
+	}
+	validator.fun = func(i0 int, i1 string) (r0 int, r1 string) { return }
+	mh.m.vOwn = append(mh.m.vOwn, &validator)
+	return &MockInheritMultipleOwnArgs {
+		MockInheritMultipleOwnArgsEval: MockInheritMultipleOwnArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritMultipleOwnFunc struct {
-	m *MockInheritMultiple
+type MockInheritMultipleOwnArgs struct {
+	MockInheritMultipleOwnArgsEval
+	fun *func(i0 int, i1 string) (r0 int, r1 string)
+	validateArgs *func(i0 int, i1 string) bool
 }
 
-func (f *MockInheritMultipleOwnFunc) Return(r0 int, r1 string) {
-	f.m.fOwn = func(int, string) (int, string) { return r0, r1 }
+func (f *MockInheritMultipleOwnArgs) ExpectArgs(match_0 interface{Match(int) bool}, match_1 interface{Match(string) bool}) *MockInheritMultipleOwnArgsEval {
+	*f.validateArgs = func(i0 int, i1 string) bool {
+		return (match_0 == nil || match_0.Match(i0)) && (match_1 == nil || match_1.Match(i1))
+	}
+	return &f.MockInheritMultipleOwnArgsEval
 }
 
-func (f *MockInheritMultipleOwnFunc) Do(do func(i0 int, i1 string) (r0 int, r1 string)) {
-	f.m.fOwn = do
+type MockInheritMultipleOwnArgsEval struct {
+	fun *func(i0 int, i1 string) (r0 int, r1 string)
 }
 
-func (mh *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeFunc {
-	mh.m.fRetType = func() (r0 testpackage.MyType) { return }
-	return &MockInheritMultipleRetTypeFunc{m: mh.m}
+func (f *MockInheritMultipleOwnArgsEval) Return(r0 int, r1 string) {
+	*f.fun = func(int, string) (int, string) { return r0, r1 }
 }
 
-type MockInheritMultipleRetTypeFunc struct {
-	m *MockInheritMultiple
+func (f *MockInheritMultipleOwnArgsEval) Do(do func(i0 int, i1 string) (r0 int, r1 string)) {
+	*f.fun = do
 }
 
-func (f *MockInheritMultipleRetTypeFunc) Return(r0 testpackage.MyType) {
-	f.m.fRetType = func() (testpackage.MyType) { return r0 }
+func (mh *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeArgsEval {
+	var validator struct {
+		fun func() (r0 testpackage.MyType)
+		validateArgs func() bool
+	}
+	validator.fun = func() (r0 testpackage.MyType) { return }
+	mh.m.vRetType = append(mh.m.vRetType, &validator)
+	return &MockInheritMultipleRetTypeArgsEval {
+		fun: &validator.fun,
+	}
 }
 
-func (f *MockInheritMultipleRetTypeFunc) Do(do func() (r0 testpackage.MyType)) {
-	f.m.fRetType = do
+type MockInheritMultipleRetTypeArgsEval struct {
+	fun *func() (r0 testpackage.MyType)
 }
 
-func (mh *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTypeFunc {
-	mh.m.fUseStdType = func(fi os.FileInfo) (r0 io.Reader) { return }
-	return &MockInheritMultipleUseStdTypeFunc{m: mh.m}
+func (f *MockInheritMultipleRetTypeArgsEval) Return(r0 testpackage.MyType) {
+	*f.fun = func() (testpackage.MyType) { return r0 }
 }
 
-type MockInheritMultipleUseStdTypeFunc struct {
-	m *MockInheritMultiple
+func (f *MockInheritMultipleRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
+	*f.fun = do
 }
 
-func (f *MockInheritMultipleUseStdTypeFunc) Return(r0 io.Reader) {
-	f.m.fUseStdType = func(os.FileInfo) (io.Reader) { return r0 }
+func (mh *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTypeArgs {
+	var validator struct {
+		fun func(fi os.FileInfo) (r0 io.Reader)
+		validateArgs func(fi os.FileInfo) bool
+	}
+	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+	mh.m.vUseStdType = append(mh.m.vUseStdType, &validator)
+	return &MockInheritMultipleUseStdTypeArgs {
+		MockInheritMultipleUseStdTypeArgsEval: MockInheritMultipleUseStdTypeArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-func (f *MockInheritMultipleUseStdTypeFunc) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
-	f.m.fUseStdType = do
+type MockInheritMultipleUseStdTypeArgs struct {
+	MockInheritMultipleUseStdTypeArgsEval
+	fun *func(fi os.FileInfo) (r0 io.Reader)
+	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (mh *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseFunc {
-	mh.m.fClose = func() (r0 error) { return }
-	return &MockInheritMultipleCloseFunc{m: mh.m}
+func (f *MockInheritMultipleUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockInheritMultipleUseStdTypeArgsEval {
+	*f.validateArgs = func(fi os.FileInfo) bool {
+		return (matchfi == nil || matchfi.Match(fi))
+	}
+	return &f.MockInheritMultipleUseStdTypeArgsEval
 }
 
-type MockInheritMultipleCloseFunc struct {
-	m *MockInheritMultiple
+type MockInheritMultipleUseStdTypeArgsEval struct {
+	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
-func (f *MockInheritMultipleCloseFunc) Return(r0 error) {
-	f.m.fClose = func() (error) { return r0 }
+func (f *MockInheritMultipleUseStdTypeArgsEval) Return(r0 io.Reader) {
+	*f.fun = func(os.FileInfo) (io.Reader) { return r0 }
 }
 
-func (f *MockInheritMultipleCloseFunc) Do(do func() (r0 error)) {
-	f.m.fClose = do
+func (f *MockInheritMultipleUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
+	*f.fun = do
 }
 
-func (mh *MockInheritMultipleWhen) Read() *MockInheritMultipleReadFunc {
-	mh.m.fRead = func(p []byte) (n int, err error) { return }
-	return &MockInheritMultipleReadFunc{m: mh.m}
+func (mh *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseArgsEval {
+	var validator struct {
+		fun func() (r0 error)
+		validateArgs func() bool
+	}
+	validator.fun = func() (r0 error) { return }
+	mh.m.vClose = append(mh.m.vClose, &validator)
+	return &MockInheritMultipleCloseArgsEval {
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritMultipleReadFunc struct {
-	m *MockInheritMultiple
+type MockInheritMultipleCloseArgsEval struct {
+	fun *func() (r0 error)
 }
 
-func (f *MockInheritMultipleReadFunc) Return(n int, err error) {
-	f.m.fRead = func([]byte) (int, error) { return n, err }
+func (f *MockInheritMultipleCloseArgsEval) Return(r0 error) {
+	*f.fun = func() (error) { return r0 }
 }
 
-func (f *MockInheritMultipleReadFunc) Do(do func(p []byte) (n int, err error)) {
-	f.m.fRead = do
+func (f *MockInheritMultipleCloseArgsEval) Do(do func() (r0 error)) {
+	*f.fun = do
 }
 
-func (mh *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekFunc {
-	mh.m.fSeek = func(offset int64, whence int) (r0 int64, r1 error) { return }
-	return &MockInheritMultipleSeekFunc{m: mh.m}
+func (mh *MockInheritMultipleWhen) Read() *MockInheritMultipleReadArgs {
+	var validator struct {
+		fun func(p []byte) (n int, err error)
+		validateArgs func(p []byte) bool
+	}
+	validator.fun = func(p []byte) (n int, err error) { return }
+	mh.m.vRead = append(mh.m.vRead, &validator)
+	return &MockInheritMultipleReadArgs {
+		MockInheritMultipleReadArgsEval: MockInheritMultipleReadArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockInheritMultipleSeekFunc struct {
-	m *MockInheritMultiple
+type MockInheritMultipleReadArgs struct {
+	MockInheritMultipleReadArgsEval
+	fun *func(p []byte) (n int, err error)
+	validateArgs *func(p []byte) bool
 }
 
-func (f *MockInheritMultipleSeekFunc) Return(r0 int64, r1 error) {
-	f.m.fSeek = func(int64, int) (int64, error) { return r0, r1 }
+func (f *MockInheritMultipleReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritMultipleReadArgsEval {
+	*f.validateArgs = func(p []byte) bool {
+		return (matchp == nil || matchp.Match(p))
+	}
+	return &f.MockInheritMultipleReadArgsEval
 }
 
-func (f *MockInheritMultipleSeekFunc) Do(do func(offset int64, whence int) (r0 int64, r1 error)) {
-	f.m.fSeek = do
+type MockInheritMultipleReadArgsEval struct {
+	fun *func(p []byte) (n int, err error)
+}
+
+func (f *MockInheritMultipleReadArgsEval) Return(n int, err error) {
+	*f.fun = func([]byte) (int, error) { return n, err }
+}
+
+func (f *MockInheritMultipleReadArgsEval) Do(do func(p []byte) (n int, err error)) {
+	*f.fun = do
+}
+
+func (mh *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekArgs {
+	var validator struct {
+		fun func(offset int64, whence int) (r0 int64, r1 error)
+		validateArgs func(offset int64, whence int) bool
+	}
+	validator.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
+	mh.m.vSeek = append(mh.m.vSeek, &validator)
+	return &MockInheritMultipleSeekArgs {
+		MockInheritMultipleSeekArgsEval: MockInheritMultipleSeekArgsEval{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
+}
+
+type MockInheritMultipleSeekArgs struct {
+	MockInheritMultipleSeekArgsEval
+	fun *func(offset int64, whence int) (r0 int64, r1 error)
+	validateArgs *func(offset int64, whence int) bool
+}
+
+func (f *MockInheritMultipleSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritMultipleSeekArgsEval {
+	*f.validateArgs = func(offset int64, whence int) bool {
+		return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+	}
+	return &f.MockInheritMultipleSeekArgsEval
+}
+
+type MockInheritMultipleSeekArgsEval struct {
+	fun *func(offset int64, whence int) (r0 int64, r1 error)
+}
+
+func (f *MockInheritMultipleSeekArgsEval) Return(r0 int64, r1 error) {
+	*f.fun = func(int64, int) (int64, error) { return r0, r1 }
+}
+
+func (f *MockInheritMultipleSeekArgsEval) Do(do func(offset int64, whence int) (r0 int64, r1 error)) {
+	*f.fun = do
 }

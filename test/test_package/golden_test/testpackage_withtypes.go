@@ -20,26 +20,29 @@ type MockWithTypes[T any, B any] struct {
 		Helper()
 	}
 	
-	fFoo func(a T, b T) (r0 B)
-	fEmpty func()
+	vFoo []*struct{fun func(a T, b T) (r0 B); validateArgs func(a T, b T) bool}
+	vEmpty []*struct{fun func(); validateArgs func() bool}
 }
 
 func (m *MockWithTypes[T, B]) Foo(a T, b T) (r0 B) {
-	if m.fFoo != nil {
-		return m.fFoo(a, b)
-	} else {
-		m.unexpectedCall("Foo", fmt.Sprintf("%+v, %+v", a, b))
-		return
+	for _, check := range m.vFoo {
+		if check.validateArgs == nil || check.validateArgs(a, b) {
+			return check.fun(a, b)
+		}
 	}
+	m.unexpectedCall("Foo", fmt.Sprintf("%+v, %+v", a, b))
+	return
 }
 
 func (m *MockWithTypes[T, B]) Empty() {
-	if m.fEmpty != nil {
-		m.fEmpty()
-	} else {
-		m.unexpectedCall("Empty", fmt.Sprintf(""))
-		return
+	for _, check := range m.vEmpty {
+		if check.validateArgs == nil || check.validateArgs() {
+			check.fun()
+			return
+		}
 	}
+	m.unexpectedCall("Empty", fmt.Sprintf(""))
+	return
 }
 
 func (m *MockWithTypes[T, B]) WHEN() *MockWithTypesWhen[T, B] {
@@ -57,32 +60,61 @@ type MockWithTypesWhen[T any, B any] struct {
 	m *MockWithTypes[T, B]
 }
 
-func (mh *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooFunc[T, B] {
-	mh.m.fFoo = func(a T, b T) (r0 B) { return }
-	return &MockWithTypesFooFunc[T, B]{m: mh.m}
+func (mh *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooArgs[T, B] {
+	var validator struct {
+		fun func(a T, b T) (r0 B)
+		validateArgs func(a T, b T) bool
+	}
+	validator.fun = func(a T, b T) (r0 B) { return }
+	mh.m.vFoo = append(mh.m.vFoo, &validator)
+	return &MockWithTypesFooArgs[T, B] {
+		MockWithTypesFooArgsEval: MockWithTypesFooArgsEval[T, B]{fun: &validator.fun},
+		validateArgs: &validator.validateArgs,
+		fun: &validator.fun,
+	}
 }
 
-type MockWithTypesFooFunc[T any, B any] struct {
-	m *MockWithTypes[T, B]
+type MockWithTypesFooArgs[T any, B any] struct {
+	MockWithTypesFooArgsEval[T, B]
+	fun *func(a T, b T) (r0 B)
+	validateArgs *func(a T, b T) bool
 }
 
-func (f *MockWithTypesFooFunc[T, B]) Return(r0 B) {
-	f.m.fFoo = func(T, T) (B) { return r0 }
+func (f *MockWithTypesFooArgs[T, B]) ExpectArgs(matcha interface{Match(T) bool}, matchb interface{Match(T) bool}) *MockWithTypesFooArgsEval[T, B] {
+	*f.validateArgs = func(a T, b T) bool {
+		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	}
+	return &f.MockWithTypesFooArgsEval
 }
 
-func (f *MockWithTypesFooFunc[T, B]) Do(do func(a T, b T) (r0 B)) {
-	f.m.fFoo = do
+type MockWithTypesFooArgsEval[T any, B any] struct {
+	fun *func(a T, b T) (r0 B)
 }
 
-func (mh *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyFunc[T, B] {
-	mh.m.fEmpty = func() { return }
-	return &MockWithTypesEmptyFunc[T, B]{m: mh.m}
+func (f *MockWithTypesFooArgsEval[T, B]) Return(r0 B) {
+	*f.fun = func(T, T) (B) { return r0 }
 }
 
-type MockWithTypesEmptyFunc[T any, B any] struct {
-	m *MockWithTypes[T, B]
+func (f *MockWithTypesFooArgsEval[T, B]) Do(do func(a T, b T) (r0 B)) {
+	*f.fun = do
 }
 
-func (f *MockWithTypesEmptyFunc[T, B]) Do(do func()) {
-	f.m.fEmpty = do
+func (mh *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyArgsEval[T, B] {
+	var validator struct {
+		fun func()
+		validateArgs func() bool
+	}
+	validator.fun = func() { return }
+	mh.m.vEmpty = append(mh.m.vEmpty, &validator)
+	return &MockWithTypesEmptyArgsEval[T, B] {
+		fun: &validator.fun,
+	}
+}
+
+type MockWithTypesEmptyArgsEval[T any, B any] struct {
+	fun *func()
+}
+
+func (f *MockWithTypesEmptyArgsEval[T, B]) Do(do func()) {
+	*f.fun = do
 }
