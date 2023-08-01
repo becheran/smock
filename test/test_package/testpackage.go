@@ -39,7 +39,8 @@ type WithTypes[T, B any] interface {
 }
 
 //go:generate smock -debug
-type WithLambda interface {
-	Foo(a int, b ...string)
-	Empty()
+type WithLambda[T comparable] interface {
+	Foo(a int, b ...string) bool
+	Bar(b ...struct{}) bool
+	Baz(b ...T) bool
 }

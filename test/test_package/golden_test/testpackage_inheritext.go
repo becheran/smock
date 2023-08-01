@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	testpackage "github.com/test/testpackage"
 	"fmt"
+	"reflect"
 )
 
 // MockInheritExt must implement interface testpackage.InheritExt
@@ -35,7 +36,7 @@ func (m *MockInheritExt) Close() (r0 error) {
 			return check.fun()
 		}
 	}
-	m.unexpectedCall("Close", fmt.Sprintf(""))
+	m.unexpectedCall("Close", )
 	return
 }
 
@@ -45,7 +46,7 @@ func (m *MockInheritExt) Read(p []byte) (n int, err error) {
 			return check.fun(p)
 		}
 	}
-	m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
+	m.unexpectedCall("Read", p)
 	return
 }
 
@@ -55,8 +56,25 @@ func (m *MockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error) {
 			return check.fun(offset, whence)
 		}
 	}
-	m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
+	m.unexpectedCall("Seek", offset, whence)
 	return
+}
+
+func (m *MockInheritExt) unexpectedCall(method string, args ...any) {
+	argsStr := ""
+	for idx, arg := range args {
+		t := reflect.TypeOf(arg)
+		if t.Kind() == reflect.Func {
+			argsStr += fmt.Sprintf("%T", t)
+		} else {
+			argsStr += fmt.Sprintf("%+v", t)
+		}
+		if idx+1 < len(args) {
+			argsStr += ", "
+		}
+	}
+	m.t.Helper()
+	m.t.Fatalf(`Unexpected call to MockInheritExt.%s(%s)`, method, argsStr)
 }
 
 func (m *MockInheritExt) WHEN() *MockInheritExtWhen {
@@ -65,16 +83,17 @@ func (m *MockInheritExt) WHEN() *MockInheritExtWhen {
 	}
 }
 
-func (m *MockInheritExt) unexpectedCall(method, args string) {
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockInheritExt.%s(%s)`, method, args)
-}
-
 type MockInheritExtWhen struct {
 	m *MockInheritExt
 }
 
 func (mh *MockInheritExtWhen) Close() *MockInheritExtCloseArgsEval {
+	for _, f := range  mh.m.vClose {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Close' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func() (r0 error)
 		validateArgs func() bool
@@ -99,6 +118,12 @@ func (f *MockInheritExtCloseArgsEval) Do(do func() (r0 error)) {
 }
 
 func (mh *MockInheritExtWhen) Read() *MockInheritExtReadArgs {
+	for _, f := range  mh.m.vRead {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Read' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(p []byte) (n int, err error)
 		validateArgs func(p []byte) bool
@@ -119,8 +144,10 @@ type MockInheritExtReadArgs struct {
 }
 
 func (f *MockInheritExtReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritExtReadArgsEval {
-	*f.validateArgs = func(p []byte) bool {
-		return (matchp == nil || matchp.Match(p))
+	if !(matchp == nil) {
+		*f.validateArgs = func(p []byte) bool {
+			return (matchp == nil || matchp.Match(p))
+		}
 	}
 	return &f.MockInheritExtReadArgsEval
 }
@@ -138,6 +165,12 @@ func (f *MockInheritExtReadArgsEval) Do(do func(p []byte) (n int, err error)) {
 }
 
 func (mh *MockInheritExtWhen) Seek() *MockInheritExtSeekArgs {
+	for _, f := range  mh.m.vSeek {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Seek' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		validateArgs func(offset int64, whence int) bool
@@ -158,8 +191,10 @@ type MockInheritExtSeekArgs struct {
 }
 
 func (f *MockInheritExtSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritExtSeekArgsEval {
-	*f.validateArgs = func(offset int64, whence int) bool {
-		return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+	if !(matchoffset == nil && matchwhence == nil) {
+		*f.validateArgs = func(offset int64, whence int) bool {
+			return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+		}
 	}
 	return &f.MockInheritExtSeekArgsEval
 }

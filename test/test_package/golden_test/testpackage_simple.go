@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	testpackage "github.com/test/testpackage"
 	"fmt"
+	"reflect"
 )
 
 // MockSimple must implement interface testpackage.Simple
@@ -37,8 +38,7 @@ func (m *MockSimple) Foo() {
 			return
 		}
 	}
-	m.unexpectedCall("Foo", fmt.Sprintf(""))
-	return
+	m.unexpectedCall("Foo", )
 }
 
 func (m *MockSimple) Bar(a int, b string) (r0 string) {
@@ -47,7 +47,7 @@ func (m *MockSimple) Bar(a int, b string) (r0 string) {
 			return check.fun(a, b)
 		}
 	}
-	m.unexpectedCall("Bar", fmt.Sprintf("%+v, %+v", a, b))
+	m.unexpectedCall("Bar", a, b)
 	return
 }
 
@@ -57,7 +57,7 @@ func (m *MockSimple) Baz(a string, b string) (r int, r2 int) {
 			return check.fun(a, b)
 		}
 	}
-	m.unexpectedCall("Baz", fmt.Sprintf("%+v, %+v", a, b))
+	m.unexpectedCall("Baz", a, b)
 	return
 }
 
@@ -67,8 +67,25 @@ func (m *MockSimple) Fun(a func(func(string, string) (int, int), func(string, st
 			return check.fun(a, b)
 		}
 	}
-	m.unexpectedCall("Fun", fmt.Sprintf("%+v, %+v", a, b))
+	m.unexpectedCall("Fun", a, b)
 	return
+}
+
+func (m *MockSimple) unexpectedCall(method string, args ...any) {
+	argsStr := ""
+	for idx, arg := range args {
+		t := reflect.TypeOf(arg)
+		if t.Kind() == reflect.Func {
+			argsStr += fmt.Sprintf("%T", t)
+		} else {
+			argsStr += fmt.Sprintf("%+v", t)
+		}
+		if idx+1 < len(args) {
+			argsStr += ", "
+		}
+	}
+	m.t.Helper()
+	m.t.Fatalf(`Unexpected call to MockSimple.%s(%s)`, method, argsStr)
 }
 
 func (m *MockSimple) WHEN() *MockSimpleWhen {
@@ -77,21 +94,22 @@ func (m *MockSimple) WHEN() *MockSimpleWhen {
 	}
 }
 
-func (m *MockSimple) unexpectedCall(method, args string) {
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockSimple.%s(%s)`, method, args)
-}
-
 type MockSimpleWhen struct {
 	m *MockSimple
 }
 
 func (mh *MockSimpleWhen) Foo() *MockSimpleFooArgsEval {
+	for _, f := range  mh.m.vFoo {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func()
 		validateArgs func() bool
 	}
-	validator.fun = func() { return }
+	validator.fun = func() { }
 	mh.m.vFoo = append(mh.m.vFoo, &validator)
 	return &MockSimpleFooArgsEval {
 		fun: &validator.fun,
@@ -107,6 +125,12 @@ func (f *MockSimpleFooArgsEval) Do(do func()) {
 }
 
 func (mh *MockSimpleWhen) Bar() *MockSimpleBarArgs {
+	for _, f := range  mh.m.vBar {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Bar' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(a int, b string) (r0 string)
 		validateArgs func(a int, b string) bool
@@ -127,8 +151,10 @@ type MockSimpleBarArgs struct {
 }
 
 func (f *MockSimpleBarArgs) ExpectArgs(matcha interface{Match(int) bool}, matchb interface{Match(string) bool}) *MockSimpleBarArgsEval {
-	*f.validateArgs = func(a int, b string) bool {
-		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	if !(matcha == nil && matchb == nil) {
+		*f.validateArgs = func(a int, b string) bool {
+			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+		}
 	}
 	return &f.MockSimpleBarArgsEval
 }
@@ -146,6 +172,12 @@ func (f *MockSimpleBarArgsEval) Do(do func(a int, b string) (r0 string)) {
 }
 
 func (mh *MockSimpleWhen) Baz() *MockSimpleBazArgs {
+	for _, f := range  mh.m.vBaz {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Baz' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(a string, b string) (r int, r2 int)
 		validateArgs func(a string, b string) bool
@@ -166,8 +198,10 @@ type MockSimpleBazArgs struct {
 }
 
 func (f *MockSimpleBazArgs) ExpectArgs(matcha interface{Match(string) bool}, matchb interface{Match(string) bool}) *MockSimpleBazArgsEval {
-	*f.validateArgs = func(a string, b string) bool {
-		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	if !(matcha == nil && matchb == nil) {
+		*f.validateArgs = func(a string, b string) bool {
+			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+		}
 	}
 	return &f.MockSimpleBazArgsEval
 }
@@ -185,6 +219,12 @@ func (f *MockSimpleBazArgsEval) Do(do func(a string, b string) (r int, r2 int)) 
 }
 
 func (mh *MockSimpleWhen) Fun() *MockSimpleFunArgs {
+	for _, f := range  mh.m.vFun {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Fun' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
 		validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
@@ -205,8 +245,10 @@ type MockSimpleFunArgs struct {
 }
 
 func (f *MockSimpleFunArgs) ExpectArgs(matcha interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}, matchb interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}) *MockSimpleFunArgsEval {
-	*f.validateArgs = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
-		return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+	if !(matcha == nil && matchb == nil) {
+		*f.validateArgs = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
+			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+		}
 	}
 	return &f.MockSimpleFunArgsEval
 }

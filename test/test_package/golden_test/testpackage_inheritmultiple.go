@@ -8,6 +8,7 @@ import (
 	os "os"
 	testpackage "github.com/test/testpackage"
 	"fmt"
+	"reflect"
 )
 
 // MockInheritMultiple must implement interface testpackage.InheritMultiple
@@ -40,7 +41,7 @@ func (m *MockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
 			return check.fun(i0, i1)
 		}
 	}
-	m.unexpectedCall("Own", fmt.Sprintf("%+v, %+v", i0, i1))
+	m.unexpectedCall("Own", i0, i1)
 	return
 }
 
@@ -50,7 +51,7 @@ func (m *MockInheritMultiple) RetType() (r0 testpackage.MyType) {
 			return check.fun()
 		}
 	}
-	m.unexpectedCall("RetType", fmt.Sprintf(""))
+	m.unexpectedCall("RetType", )
 	return
 }
 
@@ -60,7 +61,7 @@ func (m *MockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 			return check.fun(fi)
 		}
 	}
-	m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
+	m.unexpectedCall("UseStdType", fi)
 	return
 }
 
@@ -70,7 +71,7 @@ func (m *MockInheritMultiple) Close() (r0 error) {
 			return check.fun()
 		}
 	}
-	m.unexpectedCall("Close", fmt.Sprintf(""))
+	m.unexpectedCall("Close", )
 	return
 }
 
@@ -80,7 +81,7 @@ func (m *MockInheritMultiple) Read(p []byte) (n int, err error) {
 			return check.fun(p)
 		}
 	}
-	m.unexpectedCall("Read", fmt.Sprintf("%+v", p))
+	m.unexpectedCall("Read", p)
 	return
 }
 
@@ -90,8 +91,25 @@ func (m *MockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 error
 			return check.fun(offset, whence)
 		}
 	}
-	m.unexpectedCall("Seek", fmt.Sprintf("%+v, %+v", offset, whence))
+	m.unexpectedCall("Seek", offset, whence)
 	return
+}
+
+func (m *MockInheritMultiple) unexpectedCall(method string, args ...any) {
+	argsStr := ""
+	for idx, arg := range args {
+		t := reflect.TypeOf(arg)
+		if t.Kind() == reflect.Func {
+			argsStr += fmt.Sprintf("%T", t)
+		} else {
+			argsStr += fmt.Sprintf("%+v", t)
+		}
+		if idx+1 < len(args) {
+			argsStr += ", "
+		}
+	}
+	m.t.Helper()
+	m.t.Fatalf(`Unexpected call to MockInheritMultiple.%s(%s)`, method, argsStr)
 }
 
 func (m *MockInheritMultiple) WHEN() *MockInheritMultipleWhen {
@@ -100,16 +118,17 @@ func (m *MockInheritMultiple) WHEN() *MockInheritMultipleWhen {
 	}
 }
 
-func (m *MockInheritMultiple) unexpectedCall(method, args string) {
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockInheritMultiple.%s(%s)`, method, args)
-}
-
 type MockInheritMultipleWhen struct {
 	m *MockInheritMultiple
 }
 
 func (mh *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnArgs {
+	for _, f := range  mh.m.vOwn {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Own' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(i0 int, i1 string) (r0 int, r1 string)
 		validateArgs func(i0 int, i1 string) bool
@@ -130,8 +149,10 @@ type MockInheritMultipleOwnArgs struct {
 }
 
 func (f *MockInheritMultipleOwnArgs) ExpectArgs(match_0 interface{Match(int) bool}, match_1 interface{Match(string) bool}) *MockInheritMultipleOwnArgsEval {
-	*f.validateArgs = func(i0 int, i1 string) bool {
-		return (match_0 == nil || match_0.Match(i0)) && (match_1 == nil || match_1.Match(i1))
+	if !(match_0 == nil && match_1 == nil) {
+		*f.validateArgs = func(i0 int, i1 string) bool {
+			return (match_0 == nil || match_0.Match(i0)) && (match_1 == nil || match_1.Match(i1))
+		}
 	}
 	return &f.MockInheritMultipleOwnArgsEval
 }
@@ -149,6 +170,12 @@ func (f *MockInheritMultipleOwnArgsEval) Do(do func(i0 int, i1 string) (r0 int, 
 }
 
 func (mh *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeArgsEval {
+	for _, f := range  mh.m.vRetType {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'RetType' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func() (r0 testpackage.MyType)
 		validateArgs func() bool
@@ -173,6 +200,12 @@ func (f *MockInheritMultipleRetTypeArgsEval) Do(do func() (r0 testpackage.MyType
 }
 
 func (mh *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTypeArgs {
+	for _, f := range  mh.m.vUseStdType {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'UseStdType' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		validateArgs func(fi os.FileInfo) bool
@@ -193,8 +226,10 @@ type MockInheritMultipleUseStdTypeArgs struct {
 }
 
 func (f *MockInheritMultipleUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockInheritMultipleUseStdTypeArgsEval {
-	*f.validateArgs = func(fi os.FileInfo) bool {
-		return (matchfi == nil || matchfi.Match(fi))
+	if !(matchfi == nil) {
+		*f.validateArgs = func(fi os.FileInfo) bool {
+			return (matchfi == nil || matchfi.Match(fi))
+		}
 	}
 	return &f.MockInheritMultipleUseStdTypeArgsEval
 }
@@ -212,6 +247,12 @@ func (f *MockInheritMultipleUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 i
 }
 
 func (mh *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseArgsEval {
+	for _, f := range  mh.m.vClose {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Close' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func() (r0 error)
 		validateArgs func() bool
@@ -236,6 +277,12 @@ func (f *MockInheritMultipleCloseArgsEval) Do(do func() (r0 error)) {
 }
 
 func (mh *MockInheritMultipleWhen) Read() *MockInheritMultipleReadArgs {
+	for _, f := range  mh.m.vRead {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Read' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(p []byte) (n int, err error)
 		validateArgs func(p []byte) bool
@@ -256,8 +303,10 @@ type MockInheritMultipleReadArgs struct {
 }
 
 func (f *MockInheritMultipleReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritMultipleReadArgsEval {
-	*f.validateArgs = func(p []byte) bool {
-		return (matchp == nil || matchp.Match(p))
+	if !(matchp == nil) {
+		*f.validateArgs = func(p []byte) bool {
+			return (matchp == nil || matchp.Match(p))
+		}
 	}
 	return &f.MockInheritMultipleReadArgsEval
 }
@@ -275,6 +324,12 @@ func (f *MockInheritMultipleReadArgsEval) Do(do func(p []byte) (n int, err error
 }
 
 func (mh *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekArgs {
+	for _, f := range  mh.m.vSeek {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'Seek' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		validateArgs func(offset int64, whence int) bool
@@ -295,8 +350,10 @@ type MockInheritMultipleSeekArgs struct {
 }
 
 func (f *MockInheritMultipleSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritMultipleSeekArgsEval {
-	*f.validateArgs = func(offset int64, whence int) bool {
-		return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+	if !(matchoffset == nil && matchwhence == nil) {
+		*f.validateArgs = func(offset int64, whence int) bool {
+			return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+		}
 	}
 	return &f.MockInheritMultipleSeekArgsEval
 }

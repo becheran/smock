@@ -38,6 +38,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("import (")
 	w.Ident()
 	fmtAlreadyImported := false
+	reflectAlreadyImported := false
 	for _, i := range res.Imports {
 		if hasTypes && i.ImportName() == res.PackageName {
 			continue
@@ -45,10 +46,16 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if i.ImportName() == "fmt" {
 			fmtAlreadyImported = true
 		}
+		if i.ImportName() == "reflect" {
+			reflectAlreadyImported = true
+		}
 		w.P("%s", i)
 	}
 	if !fmtAlreadyImported {
 		w.P(`"fmt"`)
+	}
+	if !reflectAlreadyImported {
+		w.P(`"reflect"`)
 	}
 	w.EndIdent()
 	w.P(")")
@@ -106,19 +113,42 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.P("}")
 		w.EndIdent()
 		w.P("}")
-
-		args := `fmt.Sprintf("")`
-		if len(f.Params) > 0 {
-			format := strings.Repeat("%+v, ", len(f.Params))
-			format = format[:len(format)-2]
-			args = fmt.Sprintf(`fmt.Sprintf("%s", %s)`, format, f.Params.IdentString(model.IdentTypeInput, false))
+		w.P(`m.unexpectedCall("%s", %s)`, f.Name, f.Params.IdentString(model.IdentTypeInput, false))
+		if len(f.Results) > 0 {
+			w.P(`return`)
 		}
-		w.P(`m.unexpectedCall("%s", %s)`, f.Name, args)
-		w.P(`return`)
 		w.EndIdent()
 		w.P("}")
 		w.P("")
 	}
+
+	w.P("func (m *%s) unexpectedCall(method string, args ...any) {", mockedStructWithTypeIdentifier)
+	w.Ident()
+	w.P("argsStr := \"\"")
+	w.P("for idx, arg := range args {")
+	w.Ident()
+	w.P("t := reflect.TypeOf(arg)")
+	w.P("if t.Kind() == reflect.Func {")
+	w.Ident()
+	w.P("argsStr += fmt.Sprintf(\"%%T\", t)")
+	w.EndIdent()
+	w.P("} else {")
+	w.Ident()
+	w.P("argsStr += fmt.Sprintf(\"%%+v\", t)")
+	w.EndIdent()
+	w.P("}")
+	w.P("if idx+1 < len(args) {")
+	w.Ident()
+	w.P("argsStr += \", \"")
+	w.EndIdent()
+	w.P("}")
+	w.EndIdent()
+	w.P("}")
+	w.P("m.t.Helper()")
+	w.P("m.t.Fatalf(`Unexpected call to %s.%%s(%%s)`, method, argsStr)", mockedStructName)
+	w.EndIdent()
+	w.P("}")
+	w.P("")
 
 	w.P("func (m *%s) WHEN() *%s {", mockedStructWithTypeIdentifier, whenStructNameWithTypeIdentifier)
 	w.Ident()
@@ -127,14 +157,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("m: m,")
 	w.EndIdent()
 	w.P("}")
-	w.EndIdent()
-	w.P("}")
-	w.P("")
-
-	w.P("func (m *%s) unexpectedCall(method, args string) {", mockedStructWithTypeIdentifier)
-	w.Ident()
-	w.P("m.t.Helper()")
-	w.P("m.t.Fatalf(`Unexpected call to %s.%%s(%%s)`, method, args)", mockedStructName)
 	w.EndIdent()
 	w.P("}")
 	w.P("")
@@ -162,13 +184,28 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.P("func (mh *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
 		w.Ident()
 
+		w.P("for _, f := range  mh.m.v%s {", f.Name)
+		w.Ident()
+		w.P("if f.validateArgs == nil {")
+		w.Ident()
+		w.P("mh.m.t.Helper()")
+		w.P("mh.m.t.Fatalf(\"Unreachable condition. Call to '%s' is already captured by previous WHEN statement.\")", f.Name)
+		w.EndIdent()
+		w.P("}")
+		w.EndIdent()
+		w.P("}")
+
 		w.P("var validator struct {")
 		w.Ident()
 		w.P("fun func%s", f.Signature())
 		w.P("validateArgs func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
 		w.EndIdent()
 		w.P("}")
-		w.P("validator.fun = func%s { return }", f.Signature())
+		ret := ""
+		if hasReturnValues {
+			ret = "return "
+		}
+		w.P("validator.fun = func%s { %s}", f.Signature(), ret)
 		w.P("mh.m.v%s = append(mh.m.v%s, &validator)", f.Name, f.Name)
 		if hasParams {
 			w.P("return &%s {", whenArgsStructRef)
@@ -197,22 +234,34 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			w.P("")
 
 			args := ""
+			lambdaFieldName := ""
 			for idx, arg := range f.Params {
 				name := arg.Name
+				typeStr := arg.Type
+				prefix := ""
+				if strings.HasPrefix(arg.Type, "...") {
+					lambdaFieldName = name
+					typeStr = strings.TrimPrefix(typeStr, "...")
+					prefix = "..."
+				}
 				if name == "" {
 					name = fmt.Sprintf("_%d", idx)
 				}
-				args += fmt.Sprintf("match%s interface{Match(%s) bool}", name, arg.Type)
+				args += fmt.Sprintf("match%s %sinterface{Match(%s) bool}", name, prefix, typeStr)
 				if idx+1 < len(f.Params) {
 					args += ", "
 				}
 			}
 			w.P("func (f *%s) ExpectArgs(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
 			w.Ident()
-			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeString(model.IdentTypeInput))
-			w.Ident()
 			matchString := ""
+			checkAllNil := ""
 			for idx, arg := range f.Params {
+				if strings.HasPrefix(arg.Type, "...") {
+					checkAllNil += fmt.Sprintf("len(match%s) == 0", lambdaFieldName)
+					matchString += "true"
+					break
+				}
 				name := arg.Name
 				input := arg.Name
 				if name == "" {
@@ -223,11 +272,30 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 					input += "..."
 				}
 				matchString += fmt.Sprintf("(match%s == nil || match%s.Match(%s))", name, name, input)
+				checkAllNil += fmt.Sprintf("match%s == nil", name)
 				if idx+1 < len(f.Params) {
 					matchString += " && "
+					checkAllNil += " && "
 				}
 			}
+			w.P("if !(%s) {", checkAllNil)
+			w.Ident()
+			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeString(model.IdentTypeInput))
+			w.Ident()
+			if lambdaFieldName != "" {
+				w.P("for idx, v := range %s {", lambdaFieldName)
+				w.Ident()
+				w.P("if idx >= len(match%s) || !(match%s[idx] == nil || match%s[idx].Match(v)) {", lambdaFieldName, lambdaFieldName, lambdaFieldName)
+				w.Ident()
+				w.P("return false")
+				w.EndIdent()
+				w.P("}")
+				w.EndIdent()
+				w.P("}")
+			}
 			w.P("return %s", matchString)
+			w.EndIdent()
+			w.P("}")
 			w.EndIdent()
 			w.P("}")
 			w.P("return &f.%s", whenNoArgsStruct)

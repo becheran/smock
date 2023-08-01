@@ -8,6 +8,7 @@ import (
 	os "os"
 	testpackage "github.com/test/testpackage"
 	"fmt"
+	"reflect"
 )
 
 // MockExtend must implement interface testpackage.Extend
@@ -36,7 +37,7 @@ func (m *MockExtend) RetType() (r0 testpackage.MyType) {
 			return check.fun()
 		}
 	}
-	m.unexpectedCall("RetType", fmt.Sprintf(""))
+	m.unexpectedCall("RetType", )
 	return
 }
 
@@ -46,8 +47,25 @@ func (m *MockExtend) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 			return check.fun(fi)
 		}
 	}
-	m.unexpectedCall("UseStdType", fmt.Sprintf("%+v", fi))
+	m.unexpectedCall("UseStdType", fi)
 	return
+}
+
+func (m *MockExtend) unexpectedCall(method string, args ...any) {
+	argsStr := ""
+	for idx, arg := range args {
+		t := reflect.TypeOf(arg)
+		if t.Kind() == reflect.Func {
+			argsStr += fmt.Sprintf("%T", t)
+		} else {
+			argsStr += fmt.Sprintf("%+v", t)
+		}
+		if idx+1 < len(args) {
+			argsStr += ", "
+		}
+	}
+	m.t.Helper()
+	m.t.Fatalf(`Unexpected call to MockExtend.%s(%s)`, method, argsStr)
 }
 
 func (m *MockExtend) WHEN() *MockExtendWhen {
@@ -56,16 +74,17 @@ func (m *MockExtend) WHEN() *MockExtendWhen {
 	}
 }
 
-func (m *MockExtend) unexpectedCall(method, args string) {
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockExtend.%s(%s)`, method, args)
-}
-
 type MockExtendWhen struct {
 	m *MockExtend
 }
 
 func (mh *MockExtendWhen) RetType() *MockExtendRetTypeArgsEval {
+	for _, f := range  mh.m.vRetType {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'RetType' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func() (r0 testpackage.MyType)
 		validateArgs func() bool
@@ -90,6 +109,12 @@ func (f *MockExtendRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
 }
 
 func (mh *MockExtendWhen) UseStdType() *MockExtendUseStdTypeArgs {
+	for _, f := range  mh.m.vUseStdType {
+		if f.validateArgs == nil {
+			mh.m.t.Helper()
+			mh.m.t.Fatalf("Unreachable condition. Call to 'UseStdType' is already captured by previous WHEN statement.")
+		}
+	}
 	var validator struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		validateArgs func(fi os.FileInfo) bool
@@ -110,8 +135,10 @@ type MockExtendUseStdTypeArgs struct {
 }
 
 func (f *MockExtendUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockExtendUseStdTypeArgsEval {
-	*f.validateArgs = func(fi os.FileInfo) bool {
-		return (matchfi == nil || matchfi.Match(fi))
+	if !(matchfi == nil) {
+		*f.validateArgs = func(fi os.FileInfo) bool {
+			return (matchfi == nil || matchfi.Match(fi))
+		}
 	}
 	return &f.MockExtendUseStdTypeArgsEval
 }
