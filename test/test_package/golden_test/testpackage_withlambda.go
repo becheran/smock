@@ -109,15 +109,15 @@ type MockWithLambdaFooArgs[T comparable] struct {
 	validateArgs *func(a int, b ...string) bool
 }
 
-func (f *MockWithLambdaFooArgs[T]) ExpectArgs(matcha interface{Match(int) bool}, matchb ...interface{Match(string) bool}) *MockWithLambdaFooArgsEval[T] {
-	if !(matcha == nil && len(matchb) == 0) {
-		*f.validateArgs = func(a int, b ...string) bool {
-			for idx, v := range b {
-				if idx >= len(matchb) || !(matchb[idx] == nil || matchb[idx].Match(v)) {
+func (f *MockWithLambdaFooArgs[T]) Expect(a func(int) bool, b ...func(string) bool) *MockWithLambdaFooArgsEval[T] {
+	if !(a == nil && len(b) == 0) {
+		*f.validateArgs = func(matcha int, matchb ...string) bool {
+			for idx, v := range matchb {
+				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
 					return false
 				}
 			}
-			return (matcha == nil || matcha.Match(a)) && true
+			return (a == nil || a(matcha)) && true
 		}
 	}
 	return &f.MockWithLambdaFooArgsEval
@@ -161,11 +161,11 @@ type MockWithLambdaBarArgs[T comparable] struct {
 	validateArgs *func(b ...struct{}) bool
 }
 
-func (f *MockWithLambdaBarArgs[T]) ExpectArgs(matchb ...interface{Match(struct{}) bool}) *MockWithLambdaBarArgsEval[T] {
-	if !(len(matchb) == 0) {
-		*f.validateArgs = func(b ...struct{}) bool {
-			for idx, v := range b {
-				if idx >= len(matchb) || !(matchb[idx] == nil || matchb[idx].Match(v)) {
+func (f *MockWithLambdaBarArgs[T]) Expect(b ...func(struct{}) bool) *MockWithLambdaBarArgsEval[T] {
+	if !(len(b) == 0) {
+		*f.validateArgs = func(matchb ...struct{}) bool {
+			for idx, v := range matchb {
+				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
 					return false
 				}
 			}
@@ -213,11 +213,11 @@ type MockWithLambdaBazArgs[T comparable] struct {
 	validateArgs *func(b ...T) bool
 }
 
-func (f *MockWithLambdaBazArgs[T]) ExpectArgs(matchb ...interface{Match(T) bool}) *MockWithLambdaBazArgsEval[T] {
-	if !(len(matchb) == 0) {
-		*f.validateArgs = func(b ...T) bool {
-			for idx, v := range b {
-				if idx >= len(matchb) || !(matchb[idx] == nil || matchb[idx].Match(v)) {
+func (f *MockWithLambdaBazArgs[T]) Expect(b ...func(T) bool) *MockWithLambdaBazArgsEval[T] {
+	if !(len(b) == 0) {
+		*f.validateArgs = func(matchb ...T) bool {
+			for idx, v := range matchb {
+				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
 					return false
 				}
 			}

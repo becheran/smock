@@ -238,27 +238,27 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			for idx, arg := range f.Params {
 				name := arg.Name
 				typeStr := arg.Type
-				prefix := ""
+				lambdaPref := ""
 				if strings.HasPrefix(arg.Type, "...") {
 					lambdaFieldName = name
 					typeStr = strings.TrimPrefix(typeStr, "...")
-					prefix = "..."
+					lambdaPref = "..."
 				}
 				if name == "" {
 					name = fmt.Sprintf("_%d", idx)
 				}
-				args += fmt.Sprintf("match%s %sinterface{Match(%s) bool}", name, prefix, typeStr)
+				args += fmt.Sprintf("%s %sfunc(%s) bool", name, lambdaPref, typeStr)
 				if idx+1 < len(f.Params) {
 					args += ", "
 				}
 			}
-			w.P("func (f *%s) ExpectArgs(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
+			w.P("func (f *%s) Expect(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
 			w.Ident()
 			matchString := ""
 			checkAllNil := ""
 			for idx, arg := range f.Params {
 				if strings.HasPrefix(arg.Type, "...") {
-					checkAllNil += fmt.Sprintf("len(match%s) == 0", lambdaFieldName)
+					checkAllNil += fmt.Sprintf("len(%s) == 0", lambdaFieldName)
 					matchString += "true"
 					break
 				}
@@ -271,8 +271,8 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 				if strings.HasPrefix(arg.Type, "...") {
 					input += "..."
 				}
-				matchString += fmt.Sprintf("(match%s == nil || match%s.Match(%s))", name, name, input)
-				checkAllNil += fmt.Sprintf("match%s == nil", name)
+				matchString += fmt.Sprintf("(%s == nil || %s(match%s))", name, name, input)
+				checkAllNil += fmt.Sprintf("%s == nil", name)
 				if idx+1 < len(f.Params) {
 					matchString += " && "
 					checkAllNil += " && "
@@ -280,12 +280,12 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			}
 			w.P("if !(%s) {", checkAllNil)
 			w.Ident()
-			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeString(model.IdentTypeInput))
+			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeStringAndPrefix(model.IdentTypeInput, "match"))
 			w.Ident()
 			if lambdaFieldName != "" {
-				w.P("for idx, v := range %s {", lambdaFieldName)
+				w.P("for idx, v := range match%s {", lambdaFieldName)
 				w.Ident()
-				w.P("if idx >= len(match%s) || !(match%s[idx] == nil || match%s[idx].Match(v)) {", lambdaFieldName, lambdaFieldName, lambdaFieldName)
+				w.P("if idx >= len(%s) || !(%s[idx] == nil || %s[idx](v)) {", lambdaFieldName, lambdaFieldName, lambdaFieldName)
 				w.Ident()
 				w.P("return false")
 				w.EndIdent()

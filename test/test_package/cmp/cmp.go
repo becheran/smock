@@ -1,30 +1,30 @@
 package cmp
 
-import "golang.org/x/exp/slices"
+type Match[T any] func(e T) bool
 
-type CompareExpression[T comparable] struct {
-	evaluate func(e T) bool
-}
-
-func (ce *CompareExpression[T]) Match(val T) bool {
-	if ce.evaluate == nil {
-		return true
+func (m Match[T]) And(o Match[T]) Match[T] {
+	if o == nil {
+		return m
 	}
-	return ce.evaluate(val)
+	return func(e T) bool { return m(e) && o(e) }
 }
 
-func Eq[T comparable](other T) *CompareExpression[T] {
-	return &CompareExpression[T]{
-		evaluate: func(val T) bool {
-			return val == other
-		},
+func (m Match[T]) Or(o Match[T]) Match[T] {
+	if o == nil {
+		return m
 	}
+	return func(e T) bool { return m(e) || o(e) }
 }
 
-func AnyOf[T comparable](other ...T) *CompareExpression[T] {
-	return &CompareExpression[T]{
-		evaluate: func(val T) bool {
-			return slices.Contains(other, val)
-		},
+func Not[T any](o Match[T]) Match[T] {
+	if o == nil {
+		return func(a T) bool { return false }
+	}
+	return func(e T) bool { return !o(e) }
+}
+
+func Eq[T comparable](other T) Match[T] {
+	return func(val T) bool {
+		return val == other
 	}
 }

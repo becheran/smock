@@ -13,15 +13,15 @@ func TestSimpleWhen(t *testing.T) {
 	m := testpackage_mock.NewMockSimple(t)
 	m.WHEN().
 		Bar().
-		ExpectArgs(cmp.Eq(1), nil).
+		Expect(cmp.Eq(1), nil).
 		Return("1")
 	m.WHEN().
 		Bar().
-		ExpectArgs(cmp.Eq(2), nil).
+		Expect(cmp.Eq(2), nil).
 		Return("2")
 	m.WHEN().
 		Bar().
-		ExpectArgs(cmp.AnyOf(23, 3, 2), nil).
+		Expect(cmp.Eq(23).Or(cmp.Eq(3)).Or(cmp.Eq(2)), nil).
 		Return("2")
 	assert.Equal(t, "1", m.Bar(1, "foo"))
 	assert.Equal(t, "2", m.Bar(2, "bzs"))
@@ -32,7 +32,7 @@ func TestFallBackToMatchAll(t *testing.T) {
 	m := testpackage_mock.NewMockSimple(t)
 	m.WHEN().
 		Bar().
-		ExpectArgs(cmp.Eq(1), nil).
+		Expect(cmp.Eq(1), nil).
 		Return("1")
 	m.WHEN().
 		Bar().
@@ -50,7 +50,7 @@ func TestFallMatchAllTwiceError(t *testing.T) {
 		Return("1")
 	m.WHEN().
 		Bar().
-		ExpectArgs(nil, nil).
+		Expect(nil, nil).
 		Return("1")
 	assert.Equal(t, "Unreachable condition. Call to 'Bar' is already captured by previous WHEN statement.", tester.errStr)
 
@@ -58,7 +58,7 @@ func TestFallMatchAllTwiceError(t *testing.T) {
 	m = testpackage_mock.NewMockSimple(tester)
 	m.WHEN().
 		Bar().
-		ExpectArgs(nil, nil).
+		Expect(nil, nil).
 		Return("1")
 	m.WHEN().
 		Bar().
@@ -69,9 +69,9 @@ func TestFallMatchAllTwiceError(t *testing.T) {
 func TestLambda(t *testing.T) {
 	m := testpackage_mock.NewMockWithLambda[string](t)
 
-	m.WHEN().Foo().ExpectArgs(cmp.Eq(1), cmp.Eq("a")).Return(true)
-	m.WHEN().Bar().ExpectArgs(cmp.Eq(struct{}{}), cmp.Eq(struct{}{})).Return(true)
-	m.WHEN().Baz().ExpectArgs(cmp.Eq("other")).Return(true)
+	m.WHEN().Foo().Expect(cmp.Eq(1), cmp.Eq("a")).Return(true)
+	m.WHEN().Bar().Expect(cmp.Eq(struct{}{}), cmp.Eq(struct{}{})).Return(true)
+	m.WHEN().Baz().Expect(cmp.Eq("other")).Return(true)
 
 	assert.True(t, m.Foo(1, "a"))
 	assert.True(t, m.Bar(struct{}{}, struct{}{}))

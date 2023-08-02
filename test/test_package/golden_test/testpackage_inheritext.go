@@ -143,10 +143,10 @@ type MockInheritExtReadArgs struct {
 	validateArgs *func(p []byte) bool
 }
 
-func (f *MockInheritExtReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritExtReadArgsEval {
-	if !(matchp == nil) {
-		*f.validateArgs = func(p []byte) bool {
-			return (matchp == nil || matchp.Match(p))
+func (f *MockInheritExtReadArgs) Expect(p func([]byte) bool) *MockInheritExtReadArgsEval {
+	if !(p == nil) {
+		*f.validateArgs = func(matchp []byte) bool {
+			return (p == nil || p(matchp))
 		}
 	}
 	return &f.MockInheritExtReadArgsEval
@@ -190,10 +190,10 @@ type MockInheritExtSeekArgs struct {
 	validateArgs *func(offset int64, whence int) bool
 }
 
-func (f *MockInheritExtSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritExtSeekArgsEval {
-	if !(matchoffset == nil && matchwhence == nil) {
-		*f.validateArgs = func(offset int64, whence int) bool {
-			return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+func (f *MockInheritExtSeekArgs) Expect(offset func(int64) bool, whence func(int) bool) *MockInheritExtSeekArgsEval {
+	if !(offset == nil && whence == nil) {
+		*f.validateArgs = func(matchoffset int64, matchwhence int) bool {
+			return (offset == nil || offset(matchoffset)) && (whence == nil || whence(matchwhence))
 		}
 	}
 	return &f.MockInheritExtSeekArgsEval

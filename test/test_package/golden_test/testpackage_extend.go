@@ -134,10 +134,10 @@ type MockExtendUseStdTypeArgs struct {
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (f *MockExtendUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockExtendUseStdTypeArgsEval {
-	if !(matchfi == nil) {
-		*f.validateArgs = func(fi os.FileInfo) bool {
-			return (matchfi == nil || matchfi.Match(fi))
+func (f *MockExtendUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockExtendUseStdTypeArgsEval {
+	if !(fi == nil) {
+		*f.validateArgs = func(matchfi os.FileInfo) bool {
+			return (fi == nil || fi(matchfi))
 		}
 	}
 	return &f.MockExtendUseStdTypeArgsEval

@@ -150,10 +150,10 @@ type MockSimpleBarArgs struct {
 	validateArgs *func(a int, b string) bool
 }
 
-func (f *MockSimpleBarArgs) ExpectArgs(matcha interface{Match(int) bool}, matchb interface{Match(string) bool}) *MockSimpleBarArgsEval {
-	if !(matcha == nil && matchb == nil) {
-		*f.validateArgs = func(a int, b string) bool {
-			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+func (f *MockSimpleBarArgs) Expect(a func(int) bool, b func(string) bool) *MockSimpleBarArgsEval {
+	if !(a == nil && b == nil) {
+		*f.validateArgs = func(matcha int, matchb string) bool {
+			return (a == nil || a(matcha)) && (b == nil || b(matchb))
 		}
 	}
 	return &f.MockSimpleBarArgsEval
@@ -197,10 +197,10 @@ type MockSimpleBazArgs struct {
 	validateArgs *func(a string, b string) bool
 }
 
-func (f *MockSimpleBazArgs) ExpectArgs(matcha interface{Match(string) bool}, matchb interface{Match(string) bool}) *MockSimpleBazArgsEval {
-	if !(matcha == nil && matchb == nil) {
-		*f.validateArgs = func(a string, b string) bool {
-			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+func (f *MockSimpleBazArgs) Expect(a func(string) bool, b func(string) bool) *MockSimpleBazArgsEval {
+	if !(a == nil && b == nil) {
+		*f.validateArgs = func(matcha string, matchb string) bool {
+			return (a == nil || a(matcha)) && (b == nil || b(matchb))
 		}
 	}
 	return &f.MockSimpleBazArgsEval
@@ -244,10 +244,10 @@ type MockSimpleFunArgs struct {
 	validateArgs *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
 }
 
-func (f *MockSimpleFunArgs) ExpectArgs(matcha interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}, matchb interface{Match(func(func(string, string) (int, int), func(string, string) (int, int))) bool}) *MockSimpleFunArgsEval {
-	if !(matcha == nil && matchb == nil) {
-		*f.validateArgs = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
-			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+func (f *MockSimpleFunArgs) Expect(a func(func(func(string, string) (int, int), func(string, string) (int, int))) bool, b func(func(func(string, string) (int, int), func(string, string) (int, int))) bool) *MockSimpleFunArgsEval {
+	if !(a == nil && b == nil) {
+		*f.validateArgs = func(matcha func(func(string, string) (int, int), func(string, string) (int, int)), matchb func(func(string, string) (int, int), func(string, string) (int, int))) bool {
+			return (a == nil || a(matcha)) && (b == nil || b(matchb))
 		}
 	}
 	return &f.MockSimpleFunArgsEval

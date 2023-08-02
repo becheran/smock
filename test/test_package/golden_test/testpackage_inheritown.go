@@ -134,10 +134,10 @@ type MockInheritOwnUseStdTypeArgs struct {
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (f *MockInheritOwnUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockInheritOwnUseStdTypeArgsEval {
-	if !(matchfi == nil) {
-		*f.validateArgs = func(fi os.FileInfo) bool {
-			return (matchfi == nil || matchfi.Match(fi))
+func (f *MockInheritOwnUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockInheritOwnUseStdTypeArgsEval {
+	if !(fi == nil) {
+		*f.validateArgs = func(matchfi os.FileInfo) bool {
+			return (fi == nil || fi(matchfi))
 		}
 	}
 	return &f.MockInheritOwnUseStdTypeArgsEval

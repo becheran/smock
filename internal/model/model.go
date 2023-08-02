@@ -31,18 +31,23 @@ const (
 	IdentTypeResult IdentType = "r"
 )
 
-func (i IdentList) IdentWithTypeString(identPrefix IdentType) (res string) {
+func (i IdentList) IdentWithTypeStringAndPrefix(identPrefix IdentType, prefix string) (res string) {
 	for idx, ident := range i {
 		name := ident.Name
 		if name == "" {
 			name = fmt.Sprintf("%s%d", identPrefix, idx)
 		}
+		name = prefix + name
 		res += fmt.Sprintf("%s %s", name, ident.Type)
 		if idx+1 < len(i) {
 			res += ", "
 		}
 	}
 	return
+}
+
+func (i IdentList) IdentWithTypeString(identPrefix IdentType) (res string) {
+	return i.IdentWithTypeStringAndPrefix(identPrefix, "")
 }
 
 func (i IdentList) TypeString(identPrefix IdentType) (res string) {

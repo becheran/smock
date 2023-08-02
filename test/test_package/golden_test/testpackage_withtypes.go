@@ -98,10 +98,10 @@ type MockWithTypesFooArgs[T any, B any] struct {
 	validateArgs *func(a T, b T) bool
 }
 
-func (f *MockWithTypesFooArgs[T, B]) ExpectArgs(matcha interface{Match(T) bool}, matchb interface{Match(T) bool}) *MockWithTypesFooArgsEval[T, B] {
-	if !(matcha == nil && matchb == nil) {
-		*f.validateArgs = func(a T, b T) bool {
-			return (matcha == nil || matcha.Match(a)) && (matchb == nil || matchb.Match(b))
+func (f *MockWithTypesFooArgs[T, B]) Expect(a func(T) bool, b func(T) bool) *MockWithTypesFooArgsEval[T, B] {
+	if !(a == nil && b == nil) {
+		*f.validateArgs = func(matcha T, matchb T) bool {
+			return (a == nil || a(matcha)) && (b == nil || b(matchb))
 		}
 	}
 	return &f.MockWithTypesFooArgsEval

@@ -148,10 +148,10 @@ type MockInheritMultipleOwnArgs struct {
 	validateArgs *func(i0 int, i1 string) bool
 }
 
-func (f *MockInheritMultipleOwnArgs) ExpectArgs(match_0 interface{Match(int) bool}, match_1 interface{Match(string) bool}) *MockInheritMultipleOwnArgsEval {
-	if !(match_0 == nil && match_1 == nil) {
-		*f.validateArgs = func(i0 int, i1 string) bool {
-			return (match_0 == nil || match_0.Match(i0)) && (match_1 == nil || match_1.Match(i1))
+func (f *MockInheritMultipleOwnArgs) Expect(_0 func(int) bool, _1 func(string) bool) *MockInheritMultipleOwnArgsEval {
+	if !(_0 == nil && _1 == nil) {
+		*f.validateArgs = func(matchi0 int, matchi1 string) bool {
+			return (_0 == nil || _0(matchi0)) && (_1 == nil || _1(matchi1))
 		}
 	}
 	return &f.MockInheritMultipleOwnArgsEval
@@ -225,10 +225,10 @@ type MockInheritMultipleUseStdTypeArgs struct {
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (f *MockInheritMultipleUseStdTypeArgs) ExpectArgs(matchfi interface{Match(os.FileInfo) bool}) *MockInheritMultipleUseStdTypeArgsEval {
-	if !(matchfi == nil) {
-		*f.validateArgs = func(fi os.FileInfo) bool {
-			return (matchfi == nil || matchfi.Match(fi))
+func (f *MockInheritMultipleUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockInheritMultipleUseStdTypeArgsEval {
+	if !(fi == nil) {
+		*f.validateArgs = func(matchfi os.FileInfo) bool {
+			return (fi == nil || fi(matchfi))
 		}
 	}
 	return &f.MockInheritMultipleUseStdTypeArgsEval
@@ -302,10 +302,10 @@ type MockInheritMultipleReadArgs struct {
 	validateArgs *func(p []byte) bool
 }
 
-func (f *MockInheritMultipleReadArgs) ExpectArgs(matchp interface{Match([]byte) bool}) *MockInheritMultipleReadArgsEval {
-	if !(matchp == nil) {
-		*f.validateArgs = func(p []byte) bool {
-			return (matchp == nil || matchp.Match(p))
+func (f *MockInheritMultipleReadArgs) Expect(p func([]byte) bool) *MockInheritMultipleReadArgsEval {
+	if !(p == nil) {
+		*f.validateArgs = func(matchp []byte) bool {
+			return (p == nil || p(matchp))
 		}
 	}
 	return &f.MockInheritMultipleReadArgsEval
@@ -349,10 +349,10 @@ type MockInheritMultipleSeekArgs struct {
 	validateArgs *func(offset int64, whence int) bool
 }
 
-func (f *MockInheritMultipleSeekArgs) ExpectArgs(matchoffset interface{Match(int64) bool}, matchwhence interface{Match(int) bool}) *MockInheritMultipleSeekArgsEval {
-	if !(matchoffset == nil && matchwhence == nil) {
-		*f.validateArgs = func(offset int64, whence int) bool {
-			return (matchoffset == nil || matchoffset.Match(offset)) && (matchwhence == nil || matchwhence.Match(whence))
+func (f *MockInheritMultipleSeekArgs) Expect(offset func(int64) bool, whence func(int) bool) *MockInheritMultipleSeekArgsEval {
+	if !(offset == nil && whence == nil) {
+		*f.validateArgs = func(matchoffset int64, matchwhence int) bool {
+			return (offset == nil || offset(matchoffset)) && (whence == nil || whence(matchwhence))
 		}
 	}
 	return &f.MockInheritMultipleSeekArgsEval
