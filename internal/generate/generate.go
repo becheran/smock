@@ -97,23 +97,24 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("")
 
 	for _, f := range res.Methods {
-		w.P("func (m *%s) %s%s {", mockedStructWithTypeIdentifier, f.Name, f.Signature())
+		w.P("func (_this *%s) %s%s {", mockedStructWithTypeIdentifier, f.Name, f.Signature())
 		w.Ident()
-		w.P("for _, check := range m.v%s {", f.Name)
+		w.P("for _, _check := range _this.v%s {", f.Name)
 		w.Ident()
-		w.P("if check.validateArgs == nil || check.validateArgs(%s) {", f.Params.IdentString(model.IdentTypeInput, true))
+		w.P("if _check.validateArgs == nil || _check.validateArgs(%s) {", f.Params.IdentString(model.IdentTypeInput, true))
 		w.Ident()
 		if len(f.Results) > 0 {
-			w.P("return check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
+			w.P("return _check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
 		} else {
-			w.P("check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
+			w.P("_check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
 			w.P("return")
 		}
 		w.EndIdent()
 		w.P("}")
 		w.EndIdent()
 		w.P("}")
-		w.P(`m.unexpectedCall("%s", %s)`, f.Name, f.Params.IdentString(model.IdentTypeInput, false))
+		w.P("_this.t.Helper()")
+		w.P(`_this.unexpectedCall("%s", %s)`, f.Name, f.Params.IdentString(model.IdentTypeInput, false))
 		if len(f.Results) > 0 {
 			w.P(`return`)
 		}
@@ -122,19 +123,23 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.P("")
 	}
 
-	w.P("func (m *%s) unexpectedCall(method string, args ...any) {", mockedStructWithTypeIdentifier)
+	w.P("func (_this *%s) unexpectedCall(method string, args ...any) {", mockedStructWithTypeIdentifier)
 	w.Ident()
 	w.P("argsStr := \"\"")
 	w.P("for idx, arg := range args {")
 	w.Ident()
-	w.P("t := reflect.TypeOf(arg)")
-	w.P("if t.Kind() == reflect.Func {")
+	w.P("switch t := reflect.TypeOf(arg); {")
+	w.P("case t.Kind() == reflect.Func:")
 	w.Ident()
 	w.P("argsStr += fmt.Sprintf(\"%%T\", t)")
 	w.EndIdent()
-	w.P("} else {")
+	w.P("case t.Kind() == reflect.String:")
 	w.Ident()
-	w.P("argsStr += fmt.Sprintf(\"%%+v\", t)")
+	w.P("argsStr += fmt.Sprintf(\"%%q\", arg)")
+	w.EndIdent()
+	w.P("default:")
+	w.Ident()
+	w.P("argsStr += fmt.Sprintf(\"%%+v\", arg)")
 	w.EndIdent()
 	w.P("}")
 	w.P("if idx+1 < len(args) {")
@@ -144,17 +149,17 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("}")
 	w.EndIdent()
 	w.P("}")
-	w.P("m.t.Helper()")
-	w.P("m.t.Fatalf(`Unexpected call to %s.%%s(%%s)`, method, argsStr)", mockedStructName)
+	w.P("_this.t.Helper()")
+	w.P("_this.t.Fatalf(`Unexpected call %%s(%%s)`, method, argsStr)")
 	w.EndIdent()
 	w.P("}")
 	w.P("")
 
-	w.P("func (m *%s) WHEN() *%s {", mockedStructWithTypeIdentifier, whenStructNameWithTypeIdentifier)
+	w.P("func (_this *%s) WHEN() *%s {", mockedStructWithTypeIdentifier, whenStructNameWithTypeIdentifier)
 	w.Ident()
 	w.P("return &%s{", whenStructNameWithTypeIdentifier)
 	w.Ident()
-	w.P("m: m,")
+	w.P("m: _this,")
 	w.EndIdent()
 	w.P("}")
 	w.EndIdent()
@@ -181,15 +186,15 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if hasParams {
 			ref = whenArgsStructRef
 		}
-		w.P("func (mh *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
+		w.P("func (_this *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
 		w.Ident()
 
-		w.P("for _, f := range  mh.m.v%s {", f.Name)
+		w.P("for _, f := range _this.m.v%s {", f.Name)
 		w.Ident()
 		w.P("if f.validateArgs == nil {")
 		w.Ident()
-		w.P("mh.m.t.Helper()")
-		w.P("mh.m.t.Fatalf(\"Unreachable condition. Call to '%s' is already captured by previous WHEN statement.\")", f.Name)
+		w.P("_this.m.t.Helper()")
+		w.P("_this.m.t.Fatalf(\"Unreachable condition. Call to '%s' is already captured by previous WHEN statement.\")", f.Name)
 		w.EndIdent()
 		w.P("}")
 		w.EndIdent()
@@ -206,7 +211,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			ret = "return "
 		}
 		w.P("validator.fun = func%s { %s}", f.Signature(), ret)
-		w.P("mh.m.v%s = append(mh.m.v%s, &validator)", f.Name, f.Name)
+		w.P("_this.m.v%s = append(_this.m.v%s, &validator)", f.Name, f.Name)
 		if hasParams {
 			w.P("return &%s {", whenArgsStructRef)
 			w.Ident()
@@ -252,7 +257,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 					args += ", "
 				}
 			}
-			w.P("func (f *%s) Expect(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
+			w.P("func (_this *%s) Expect(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
 			w.Ident()
 			matchString := ""
 			checkAllNil := ""
@@ -271,7 +276,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 				if strings.HasPrefix(arg.Type, "...") {
 					input += "..."
 				}
-				matchString += fmt.Sprintf("(%s == nil || %s(match%s))", name, name, input)
+				matchString += fmt.Sprintf("(%s == nil || %s(_%s))", name, name, input)
 				checkAllNil += fmt.Sprintf("%s == nil", name)
 				if idx+1 < len(f.Params) {
 					matchString += " && "
@@ -280,12 +285,12 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			}
 			w.P("if !(%s) {", checkAllNil)
 			w.Ident()
-			w.P("*f.validateArgs = func(%s) bool {", f.Params.IdentWithTypeStringAndPrefix(model.IdentTypeInput, "match"))
+			w.P("*_this.validateArgs = func(%s) bool {", f.Params.IdentWithTypeStringAndPrefix(model.IdentTypeInput, "_"))
 			w.Ident()
 			if lambdaFieldName != "" {
-				w.P("for idx, v := range match%s {", lambdaFieldName)
+				w.P("for _idx, _val := range _%s {", lambdaFieldName)
 				w.Ident()
-				w.P("if idx >= len(%s) || !(%s[idx] == nil || %s[idx](v)) {", lambdaFieldName, lambdaFieldName, lambdaFieldName)
+				w.P("if _idx >= len(%s) || !(%s[_idx] == nil || %s[_idx](_val)) {", lambdaFieldName, lambdaFieldName, lambdaFieldName)
 				w.Ident()
 				w.P("return false")
 				w.EndIdent()
@@ -298,7 +303,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			w.P("}")
 			w.EndIdent()
 			w.P("}")
-			w.P("return &f.%s", whenNoArgsStruct)
+			w.P("return &_this.%s", whenNoArgsStruct)
 			w.EndIdent()
 			w.P("}")
 			w.P("")
@@ -312,17 +317,17 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.P("")
 
 		if hasReturnValues {
-			w.P("func (f *%s) Return(%s) {", whenNoArgsStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult))
+			w.P("func (_this *%s) Return(%s) {", whenNoArgsStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult))
 			w.Ident()
-			w.P("*f.fun = func%s { return %s }", f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
+			w.P("*_this.fun = func%s { return %s }", f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
 			w.EndIdent()
 			w.P("}")
 			w.P("")
 		}
 
-		w.P("func (f *%s) Do(do func%s) {", whenNoArgsStructRef, f.Signature())
+		w.P("func (_this *%s) Do(do func%s) {", whenNoArgsStructRef, f.Signature())
 		w.Ident()
-		w.P("*f.fun = do")
+		w.P("*_this.fun = do")
 		w.EndIdent()
 		w.P("}")
 		if idx < len(res.Methods)-1 {

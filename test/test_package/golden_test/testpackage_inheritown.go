@@ -31,46 +31,50 @@ type MockInheritOwn struct {
 	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool}
 }
 
-func (m *MockInheritOwn) RetType() (r0 testpackage.MyType) {
-	for _, check := range m.vRetType {
-		if check.validateArgs == nil || check.validateArgs() {
-			return check.fun()
+func (_this *MockInheritOwn) RetType() (r0 testpackage.MyType) {
+	for _, _check := range _this.vRetType {
+		if _check.validateArgs == nil || _check.validateArgs() {
+			return _check.fun()
 		}
 	}
-	m.unexpectedCall("RetType", )
+	_this.t.Helper()
+	_this.unexpectedCall("RetType", )
 	return
 }
 
-func (m *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
-	for _, check := range m.vUseStdType {
-		if check.validateArgs == nil || check.validateArgs(fi) {
-			return check.fun(fi)
+func (_this *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
+	for _, _check := range _this.vUseStdType {
+		if _check.validateArgs == nil || _check.validateArgs(fi) {
+			return _check.fun(fi)
 		}
 	}
-	m.unexpectedCall("UseStdType", fi)
+	_this.t.Helper()
+	_this.unexpectedCall("UseStdType", fi)
 	return
 }
 
-func (m *MockInheritOwn) unexpectedCall(method string, args ...any) {
+func (_this *MockInheritOwn) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
-		t := reflect.TypeOf(arg)
-		if t.Kind() == reflect.Func {
+		switch t := reflect.TypeOf(arg); {
+		case t.Kind() == reflect.Func:
 			argsStr += fmt.Sprintf("%T", t)
-		} else {
-			argsStr += fmt.Sprintf("%+v", t)
+		case t.Kind() == reflect.String:
+			argsStr += fmt.Sprintf("%q", arg)
+		default:
+			argsStr += fmt.Sprintf("%+v", arg)
 		}
 		if idx+1 < len(args) {
 			argsStr += ", "
 		}
 	}
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockInheritOwn.%s(%s)`, method, argsStr)
+	_this.t.Helper()
+	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
 }
 
-func (m *MockInheritOwn) WHEN() *MockInheritOwnWhen {
+func (_this *MockInheritOwn) WHEN() *MockInheritOwnWhen {
 	return &MockInheritOwnWhen{
-		m: m,
+		m: _this,
 	}
 }
 
@@ -78,11 +82,11 @@ type MockInheritOwnWhen struct {
 	m *MockInheritOwn
 }
 
-func (mh *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
-	for _, f := range  mh.m.vRetType {
+func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
+	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'RetType' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'RetType' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -90,7 +94,7 @@ func (mh *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
 		validateArgs func() bool
 	}
 	validator.fun = func() (r0 testpackage.MyType) { return }
-	mh.m.vRetType = append(mh.m.vRetType, &validator)
+	_this.m.vRetType = append(_this.m.vRetType, &validator)
 	return &MockInheritOwnRetTypeArgsEval {
 		fun: &validator.fun,
 	}
@@ -100,19 +104,19 @@ type MockInheritOwnRetTypeArgsEval struct {
 	fun *func() (r0 testpackage.MyType)
 }
 
-func (f *MockInheritOwnRetTypeArgsEval) Return(r0 testpackage.MyType) {
-	*f.fun = func() (testpackage.MyType) { return r0 }
+func (_this *MockInheritOwnRetTypeArgsEval) Return(r0 testpackage.MyType) {
+	*_this.fun = func() (testpackage.MyType) { return r0 }
 }
 
-func (f *MockInheritOwnRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
-	*f.fun = do
+func (_this *MockInheritOwnRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
+	*_this.fun = do
 }
 
-func (mh *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
-	for _, f := range  mh.m.vUseStdType {
+func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
+	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'UseStdType' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'UseStdType' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -120,7 +124,7 @@ func (mh *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
 		validateArgs func(fi os.FileInfo) bool
 	}
 	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
-	mh.m.vUseStdType = append(mh.m.vUseStdType, &validator)
+	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
 	return &MockInheritOwnUseStdTypeArgs {
 		MockInheritOwnUseStdTypeArgsEval: MockInheritOwnUseStdTypeArgsEval{fun: &validator.fun},
 		validateArgs: &validator.validateArgs,
@@ -134,23 +138,23 @@ type MockInheritOwnUseStdTypeArgs struct {
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (f *MockInheritOwnUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockInheritOwnUseStdTypeArgsEval {
+func (_this *MockInheritOwnUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockInheritOwnUseStdTypeArgsEval {
 	if !(fi == nil) {
-		*f.validateArgs = func(matchfi os.FileInfo) bool {
-			return (fi == nil || fi(matchfi))
+		*_this.validateArgs = func(_fi os.FileInfo) bool {
+			return (fi == nil || fi(_fi))
 		}
 	}
-	return &f.MockInheritOwnUseStdTypeArgsEval
+	return &_this.MockInheritOwnUseStdTypeArgsEval
 }
 
 type MockInheritOwnUseStdTypeArgsEval struct {
 	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
-func (f *MockInheritOwnUseStdTypeArgsEval) Return(r0 io.Reader) {
-	*f.fun = func(os.FileInfo) (io.Reader) { return r0 }
+func (_this *MockInheritOwnUseStdTypeArgsEval) Return(r0 io.Reader) {
+	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
 }
 
-func (f *MockInheritOwnUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
-	*f.fun = do
+func (_this *MockInheritOwnUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
+	*_this.fun = do
 }

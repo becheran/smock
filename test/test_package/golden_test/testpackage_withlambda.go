@@ -26,56 +26,61 @@ type MockWithLambda[T comparable] struct {
 	vBaz []*struct{fun func(b ...T) (r0 bool); validateArgs func(b ...T) bool}
 }
 
-func (m *MockWithLambda[T]) Foo(a int, b ...string) (r0 bool) {
-	for _, check := range m.vFoo {
-		if check.validateArgs == nil || check.validateArgs(a, b...) {
-			return check.fun(a, b...)
+func (_this *MockWithLambda[T]) Foo(a int, b ...string) (r0 bool) {
+	for _, _check := range _this.vFoo {
+		if _check.validateArgs == nil || _check.validateArgs(a, b...) {
+			return _check.fun(a, b...)
 		}
 	}
-	m.unexpectedCall("Foo", a, b)
+	_this.t.Helper()
+	_this.unexpectedCall("Foo", a, b)
 	return
 }
 
-func (m *MockWithLambda[T]) Bar(b ...struct{}) (r0 bool) {
-	for _, check := range m.vBar {
-		if check.validateArgs == nil || check.validateArgs(b...) {
-			return check.fun(b...)
+func (_this *MockWithLambda[T]) Bar(b ...struct{}) (r0 bool) {
+	for _, _check := range _this.vBar {
+		if _check.validateArgs == nil || _check.validateArgs(b...) {
+			return _check.fun(b...)
 		}
 	}
-	m.unexpectedCall("Bar", b)
+	_this.t.Helper()
+	_this.unexpectedCall("Bar", b)
 	return
 }
 
-func (m *MockWithLambda[T]) Baz(b ...T) (r0 bool) {
-	for _, check := range m.vBaz {
-		if check.validateArgs == nil || check.validateArgs(b...) {
-			return check.fun(b...)
+func (_this *MockWithLambda[T]) Baz(b ...T) (r0 bool) {
+	for _, _check := range _this.vBaz {
+		if _check.validateArgs == nil || _check.validateArgs(b...) {
+			return _check.fun(b...)
 		}
 	}
-	m.unexpectedCall("Baz", b)
+	_this.t.Helper()
+	_this.unexpectedCall("Baz", b)
 	return
 }
 
-func (m *MockWithLambda[T]) unexpectedCall(method string, args ...any) {
+func (_this *MockWithLambda[T]) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
-		t := reflect.TypeOf(arg)
-		if t.Kind() == reflect.Func {
+		switch t := reflect.TypeOf(arg); {
+		case t.Kind() == reflect.Func:
 			argsStr += fmt.Sprintf("%T", t)
-		} else {
-			argsStr += fmt.Sprintf("%+v", t)
+		case t.Kind() == reflect.String:
+			argsStr += fmt.Sprintf("%q", arg)
+		default:
+			argsStr += fmt.Sprintf("%+v", arg)
 		}
 		if idx+1 < len(args) {
 			argsStr += ", "
 		}
 	}
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockWithLambda.%s(%s)`, method, argsStr)
+	_this.t.Helper()
+	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
 }
 
-func (m *MockWithLambda[T]) WHEN() *MockWithLambdaWhen[T] {
+func (_this *MockWithLambda[T]) WHEN() *MockWithLambdaWhen[T] {
 	return &MockWithLambdaWhen[T]{
-		m: m,
+		m: _this,
 	}
 }
 
@@ -83,11 +88,11 @@ type MockWithLambdaWhen[T comparable] struct {
 	m *MockWithLambda[T]
 }
 
-func (mh *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooArgs[T] {
-	for _, f := range  mh.m.vFoo {
+func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooArgs[T] {
+	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -95,7 +100,7 @@ func (mh *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooArgs[T] {
 		validateArgs func(a int, b ...string) bool
 	}
 	validator.fun = func(a int, b ...string) (r0 bool) { return }
-	mh.m.vFoo = append(mh.m.vFoo, &validator)
+	_this.m.vFoo = append(_this.m.vFoo, &validator)
 	return &MockWithLambdaFooArgs[T] {
 		MockWithLambdaFooArgsEval: MockWithLambdaFooArgsEval[T]{fun: &validator.fun},
 		validateArgs: &validator.validateArgs,
@@ -109,37 +114,37 @@ type MockWithLambdaFooArgs[T comparable] struct {
 	validateArgs *func(a int, b ...string) bool
 }
 
-func (f *MockWithLambdaFooArgs[T]) Expect(a func(int) bool, b ...func(string) bool) *MockWithLambdaFooArgsEval[T] {
+func (_this *MockWithLambdaFooArgs[T]) Expect(a func(int) bool, b ...func(string) bool) *MockWithLambdaFooArgsEval[T] {
 	if !(a == nil && len(b) == 0) {
-		*f.validateArgs = func(matcha int, matchb ...string) bool {
-			for idx, v := range matchb {
-				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
+		*_this.validateArgs = func(_a int, _b ...string) bool {
+			for _idx, _val := range _b {
+				if _idx >= len(b) || !(b[_idx] == nil || b[_idx](_val)) {
 					return false
 				}
 			}
-			return (a == nil || a(matcha)) && true
+			return (a == nil || a(_a)) && true
 		}
 	}
-	return &f.MockWithLambdaFooArgsEval
+	return &_this.MockWithLambdaFooArgsEval
 }
 
 type MockWithLambdaFooArgsEval[T comparable] struct {
 	fun *func(a int, b ...string) (r0 bool)
 }
 
-func (f *MockWithLambdaFooArgsEval[T]) Return(r0 bool) {
-	*f.fun = func(int, ...string) (bool) { return r0 }
+func (_this *MockWithLambdaFooArgsEval[T]) Return(r0 bool) {
+	*_this.fun = func(int, ...string) (bool) { return r0 }
 }
 
-func (f *MockWithLambdaFooArgsEval[T]) Do(do func(a int, b ...string) (r0 bool)) {
-	*f.fun = do
+func (_this *MockWithLambdaFooArgsEval[T]) Do(do func(a int, b ...string) (r0 bool)) {
+	*_this.fun = do
 }
 
-func (mh *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarArgs[T] {
-	for _, f := range  mh.m.vBar {
+func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarArgs[T] {
+	for _, f := range _this.m.vBar {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'Bar' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Bar' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -147,7 +152,7 @@ func (mh *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarArgs[T] {
 		validateArgs func(b ...struct{}) bool
 	}
 	validator.fun = func(b ...struct{}) (r0 bool) { return }
-	mh.m.vBar = append(mh.m.vBar, &validator)
+	_this.m.vBar = append(_this.m.vBar, &validator)
 	return &MockWithLambdaBarArgs[T] {
 		MockWithLambdaBarArgsEval: MockWithLambdaBarArgsEval[T]{fun: &validator.fun},
 		validateArgs: &validator.validateArgs,
@@ -161,37 +166,37 @@ type MockWithLambdaBarArgs[T comparable] struct {
 	validateArgs *func(b ...struct{}) bool
 }
 
-func (f *MockWithLambdaBarArgs[T]) Expect(b ...func(struct{}) bool) *MockWithLambdaBarArgsEval[T] {
+func (_this *MockWithLambdaBarArgs[T]) Expect(b ...func(struct{}) bool) *MockWithLambdaBarArgsEval[T] {
 	if !(len(b) == 0) {
-		*f.validateArgs = func(matchb ...struct{}) bool {
-			for idx, v := range matchb {
-				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
+		*_this.validateArgs = func(_b ...struct{}) bool {
+			for _idx, _val := range _b {
+				if _idx >= len(b) || !(b[_idx] == nil || b[_idx](_val)) {
 					return false
 				}
 			}
 			return true
 		}
 	}
-	return &f.MockWithLambdaBarArgsEval
+	return &_this.MockWithLambdaBarArgsEval
 }
 
 type MockWithLambdaBarArgsEval[T comparable] struct {
 	fun *func(b ...struct{}) (r0 bool)
 }
 
-func (f *MockWithLambdaBarArgsEval[T]) Return(r0 bool) {
-	*f.fun = func(...struct{}) (bool) { return r0 }
+func (_this *MockWithLambdaBarArgsEval[T]) Return(r0 bool) {
+	*_this.fun = func(...struct{}) (bool) { return r0 }
 }
 
-func (f *MockWithLambdaBarArgsEval[T]) Do(do func(b ...struct{}) (r0 bool)) {
-	*f.fun = do
+func (_this *MockWithLambdaBarArgsEval[T]) Do(do func(b ...struct{}) (r0 bool)) {
+	*_this.fun = do
 }
 
-func (mh *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazArgs[T] {
-	for _, f := range  mh.m.vBaz {
+func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazArgs[T] {
+	for _, f := range _this.m.vBaz {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'Baz' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Baz' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -199,7 +204,7 @@ func (mh *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazArgs[T] {
 		validateArgs func(b ...T) bool
 	}
 	validator.fun = func(b ...T) (r0 bool) { return }
-	mh.m.vBaz = append(mh.m.vBaz, &validator)
+	_this.m.vBaz = append(_this.m.vBaz, &validator)
 	return &MockWithLambdaBazArgs[T] {
 		MockWithLambdaBazArgsEval: MockWithLambdaBazArgsEval[T]{fun: &validator.fun},
 		validateArgs: &validator.validateArgs,
@@ -213,28 +218,28 @@ type MockWithLambdaBazArgs[T comparable] struct {
 	validateArgs *func(b ...T) bool
 }
 
-func (f *MockWithLambdaBazArgs[T]) Expect(b ...func(T) bool) *MockWithLambdaBazArgsEval[T] {
+func (_this *MockWithLambdaBazArgs[T]) Expect(b ...func(T) bool) *MockWithLambdaBazArgsEval[T] {
 	if !(len(b) == 0) {
-		*f.validateArgs = func(matchb ...T) bool {
-			for idx, v := range matchb {
-				if idx >= len(b) || !(b[idx] == nil || b[idx](v)) {
+		*_this.validateArgs = func(_b ...T) bool {
+			for _idx, _val := range _b {
+				if _idx >= len(b) || !(b[_idx] == nil || b[_idx](_val)) {
 					return false
 				}
 			}
 			return true
 		}
 	}
-	return &f.MockWithLambdaBazArgsEval
+	return &_this.MockWithLambdaBazArgsEval
 }
 
 type MockWithLambdaBazArgsEval[T comparable] struct {
 	fun *func(b ...T) (r0 bool)
 }
 
-func (f *MockWithLambdaBazArgsEval[T]) Return(r0 bool) {
-	*f.fun = func(...T) (bool) { return r0 }
+func (_this *MockWithLambdaBazArgsEval[T]) Return(r0 bool) {
+	*_this.fun = func(...T) (bool) { return r0 }
 }
 
-func (f *MockWithLambdaBazArgsEval[T]) Do(do func(b ...T) (r0 bool)) {
-	*f.fun = do
+func (_this *MockWithLambdaBazArgsEval[T]) Do(do func(b ...T) (r0 bool)) {
+	*_this.fun = do
 }

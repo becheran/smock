@@ -8,8 +8,8 @@ import (
 //go:generate smock -debug
 type Simple interface {
 	Foo()
-	Bar(a int, b string) string
-	Baz(a, b string) (r, r2 int)
+	Bar(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) string
+	Baz(a int, b string) (s string)
 	Fun(a, b func(a, b func(o, i string) (f, a int))) (r, r2 func())
 }
 

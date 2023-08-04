@@ -25,46 +25,50 @@ type MockWithTypes[T any, B any] struct {
 	vEmpty []*struct{fun func(); validateArgs func() bool}
 }
 
-func (m *MockWithTypes[T, B]) Foo(a T, b T) (r0 B) {
-	for _, check := range m.vFoo {
-		if check.validateArgs == nil || check.validateArgs(a, b) {
-			return check.fun(a, b)
+func (_this *MockWithTypes[T, B]) Foo(a T, b T) (r0 B) {
+	for _, _check := range _this.vFoo {
+		if _check.validateArgs == nil || _check.validateArgs(a, b) {
+			return _check.fun(a, b)
 		}
 	}
-	m.unexpectedCall("Foo", a, b)
+	_this.t.Helper()
+	_this.unexpectedCall("Foo", a, b)
 	return
 }
 
-func (m *MockWithTypes[T, B]) Empty() {
-	for _, check := range m.vEmpty {
-		if check.validateArgs == nil || check.validateArgs() {
-			check.fun()
+func (_this *MockWithTypes[T, B]) Empty() {
+	for _, _check := range _this.vEmpty {
+		if _check.validateArgs == nil || _check.validateArgs() {
+			_check.fun()
 			return
 		}
 	}
-	m.unexpectedCall("Empty", )
+	_this.t.Helper()
+	_this.unexpectedCall("Empty", )
 }
 
-func (m *MockWithTypes[T, B]) unexpectedCall(method string, args ...any) {
+func (_this *MockWithTypes[T, B]) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
-		t := reflect.TypeOf(arg)
-		if t.Kind() == reflect.Func {
+		switch t := reflect.TypeOf(arg); {
+		case t.Kind() == reflect.Func:
 			argsStr += fmt.Sprintf("%T", t)
-		} else {
-			argsStr += fmt.Sprintf("%+v", t)
+		case t.Kind() == reflect.String:
+			argsStr += fmt.Sprintf("%q", arg)
+		default:
+			argsStr += fmt.Sprintf("%+v", arg)
 		}
 		if idx+1 < len(args) {
 			argsStr += ", "
 		}
 	}
-	m.t.Helper()
-	m.t.Fatalf(`Unexpected call to MockWithTypes.%s(%s)`, method, argsStr)
+	_this.t.Helper()
+	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
 }
 
-func (m *MockWithTypes[T, B]) WHEN() *MockWithTypesWhen[T, B] {
+func (_this *MockWithTypes[T, B]) WHEN() *MockWithTypesWhen[T, B] {
 	return &MockWithTypesWhen[T, B]{
-		m: m,
+		m: _this,
 	}
 }
 
@@ -72,11 +76,11 @@ type MockWithTypesWhen[T any, B any] struct {
 	m *MockWithTypes[T, B]
 }
 
-func (mh *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooArgs[T, B] {
-	for _, f := range  mh.m.vFoo {
+func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooArgs[T, B] {
+	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -84,7 +88,7 @@ func (mh *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooArgs[T, B] {
 		validateArgs func(a T, b T) bool
 	}
 	validator.fun = func(a T, b T) (r0 B) { return }
-	mh.m.vFoo = append(mh.m.vFoo, &validator)
+	_this.m.vFoo = append(_this.m.vFoo, &validator)
 	return &MockWithTypesFooArgs[T, B] {
 		MockWithTypesFooArgsEval: MockWithTypesFooArgsEval[T, B]{fun: &validator.fun},
 		validateArgs: &validator.validateArgs,
@@ -98,32 +102,32 @@ type MockWithTypesFooArgs[T any, B any] struct {
 	validateArgs *func(a T, b T) bool
 }
 
-func (f *MockWithTypesFooArgs[T, B]) Expect(a func(T) bool, b func(T) bool) *MockWithTypesFooArgsEval[T, B] {
+func (_this *MockWithTypesFooArgs[T, B]) Expect(a func(T) bool, b func(T) bool) *MockWithTypesFooArgsEval[T, B] {
 	if !(a == nil && b == nil) {
-		*f.validateArgs = func(matcha T, matchb T) bool {
-			return (a == nil || a(matcha)) && (b == nil || b(matchb))
+		*_this.validateArgs = func(_a T, _b T) bool {
+			return (a == nil || a(_a)) && (b == nil || b(_b))
 		}
 	}
-	return &f.MockWithTypesFooArgsEval
+	return &_this.MockWithTypesFooArgsEval
 }
 
 type MockWithTypesFooArgsEval[T any, B any] struct {
 	fun *func(a T, b T) (r0 B)
 }
 
-func (f *MockWithTypesFooArgsEval[T, B]) Return(r0 B) {
-	*f.fun = func(T, T) (B) { return r0 }
+func (_this *MockWithTypesFooArgsEval[T, B]) Return(r0 B) {
+	*_this.fun = func(T, T) (B) { return r0 }
 }
 
-func (f *MockWithTypesFooArgsEval[T, B]) Do(do func(a T, b T) (r0 B)) {
-	*f.fun = do
+func (_this *MockWithTypesFooArgsEval[T, B]) Do(do func(a T, b T) (r0 B)) {
+	*_this.fun = do
 }
 
-func (mh *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyArgsEval[T, B] {
-	for _, f := range  mh.m.vEmpty {
+func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyArgsEval[T, B] {
+	for _, f := range _this.m.vEmpty {
 		if f.validateArgs == nil {
-			mh.m.t.Helper()
-			mh.m.t.Fatalf("Unreachable condition. Call to 'Empty' is already captured by previous WHEN statement.")
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Empty' is already captured by previous WHEN statement.")
 		}
 	}
 	var validator struct {
@@ -131,7 +135,7 @@ func (mh *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyArgsEval[T, B] {
 		validateArgs func() bool
 	}
 	validator.fun = func() { }
-	mh.m.vEmpty = append(mh.m.vEmpty, &validator)
+	_this.m.vEmpty = append(_this.m.vEmpty, &validator)
 	return &MockWithTypesEmptyArgsEval[T, B] {
 		fun: &validator.fun,
 	}
@@ -141,6 +145,6 @@ type MockWithTypesEmptyArgsEval[T any, B any] struct {
 	fun *func()
 }
 
-func (f *MockWithTypesEmptyArgsEval[T, B]) Do(do func()) {
-	*f.fun = do
+func (_this *MockWithTypesEmptyArgsEval[T, B]) Do(do func()) {
+	*_this.fun = do
 }
