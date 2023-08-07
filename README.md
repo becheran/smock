@@ -1,6 +1,7 @@
 # smock
 
 [![Pipeline Status](https://github.com/becheran/smock/actions/workflows/go.yml/badge.svg)](https://github.com/becheran/smock/actions/workflows/go.yml)
+[![Doc][go-doc-image]][go-doc-url]
 [![Go Report Card][go-report-image]][go-report-url]
 [![PRs Welcome][pr-welcome-image]][pr-welcome-url]
 [![License][license-image]][license-url]
@@ -11,6 +12,8 @@
 [go-report-url]: https://goreportcard.com/report/github.com/becheran/smock
 [pr-welcome-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-welcome-url]: https://github.com/becheran/smock/blob/main/CONTRIBUTING.md
+[go-doc-image]: https://godoc.org/github.com/becheran/smock?status.svg
+[go-doc-url]: https://godoc.org/github.com/becheran/smock
 
 Simple and fast mock generator for golang
 
