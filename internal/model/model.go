@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	MockPrefix        = "Mock"
 	MockPackageSuffix = "_mock"
 	MockDir           = "mocks"
 )

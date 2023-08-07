@@ -18,7 +18,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 
 	hasTypes := len(res.Types) > 0
 
-	mockedStructName := fmt.Sprintf("%s%s", model.MockPrefix, res.Name)
+	mockedStructName := fmt.Sprintf("%s%s", "mock", res.Name)
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
 	whenStructName := mockedStructName + "When"
 	whenStructNameWithTypeIdentifier := fmt.Sprintf("%s%s", whenStructName, res.Types.ListIdentifier())
@@ -69,28 +69,54 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.P("")
 	}
 
-	w.P(`func New%s%s(t interface {
+	w.P(`// NewMock%s creates a new mock object which implements the corresponding interface.
+// All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
+func NewMock%s%s(t interface {
 	Fatalf(format string, args ...interface{})
 	Helper()
+	Cleanup(f func())
 }) *%s {`,
-		mockedStructName, res.Types.ListTypesWithIdentifiers(), mockedStructWithTypeIdentifier)
+		res.Name, res.Name, res.Types.ListTypesWithIdentifiers(), mockedStructWithTypeIdentifier)
 	w.Ident()
-	w.P("return &%s%s{t: t}", mockedStructName, res.Types.ListIdentifier())
+	w.P("t.Helper()")
+	w.P("m := &%s%s{t: t}", mockedStructName, res.Types.ListIdentifier())
+	w.P("t.Cleanup(func () {")
+	w.Ident()
+	w.P("errStr := \"\"")
+	for _, m := range res.Methods {
+		w.P("for _, v := range m.v%s {", m.Name)
+		w.Ident()
+		w.P("if v.expectedCalled >= 0 && v.expectedCalled != v.called {")
+		w.Ident()
+		// TODO add args?
+		w.P("errStr += fmt.Sprintf(\"\\nExpected '%s' to be called %%d times, but was called %%d times.\", v.expectedCalled, v.called)", m.Name)
+		w.EndIdent()
+		w.P("}")
+		w.EndIdent()
+		w.P("}")
+	}
+	w.P("if errStr != \"\" {")
+	w.Ident()
+	w.P("t.Helper()")
+	w.P("t.Fatalf(errStr)")
+	w.EndIdent()
+	w.P("}")
+	w.EndIdent()
+	w.P("})")
+	w.P("return m")
 	w.EndIdent()
 	w.P("}")
 	w.P("")
 
 	w.P("type %s%s struct {", mockedStructName, res.Types.ListTypesWithIdentifiers())
 	w.Ident()
-
 	w.P(`t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}`)
 	w.P("")
-
 	for _, m := range res.Methods {
-		w.P("v%s []*struct{fun func%s; validateArgs func(%s) bool}", m.Name, m.Signature(), m.Params.IdentWithTypeString(model.IdentTypeInput))
+		w.P("v%s []*struct{fun func%s; validateArgs func(%s) bool; expectedCalled int; called int}", m.Name, m.Signature(), m.Params.IdentWithTypeString(model.IdentTypeInput))
 	}
 	w.EndIdent()
 	w.P("}")
@@ -103,6 +129,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.Ident()
 		w.P("if _check.validateArgs == nil || _check.validateArgs(%s) {", f.Params.IdentString(model.IdentTypeInput, true))
 		w.Ident()
+		w.P("_check.called++")
 		if len(f.Results) > 0 {
 			w.P("return _check.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
 		} else {
@@ -155,6 +182,8 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("}")
 	w.P("")
 
+	w.P("// WHEN is used to set the mock behavior when a specific functions on the object are called.")
+	w.P("// Use this to setup your mock for your specific test scenario.")
 	w.P("func (_this *%s) WHEN() *%s {", mockedStructWithTypeIdentifier, whenStructNameWithTypeIdentifier)
 	w.Ident()
 	w.P("return &%s{", whenStructNameWithTypeIdentifier)
@@ -173,19 +202,25 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("}")
 	w.P("")
 
+	timesStruct := fmt.Sprintf("%s%s", mockedStructName, "Times")
+
 	for idx, f := range res.Methods {
-		whenArgsStruct := fmt.Sprintf("%s%sArgs", mockedStructName, f.Name)
-		whenArgsStructRef := fmt.Sprintf("%s%s", whenArgsStruct, res.Types.ListIdentifier())
-		whenNoArgsStruct := fmt.Sprintf("%sEval", whenArgsStruct)
-		whenNoArgsStructRef := fmt.Sprintf("%s%s", whenNoArgsStruct, res.Types.ListIdentifier())
+		expectStruct := fmt.Sprintf("%s%sExpect", mockedStructName, f.Name)
+		expectStructRef := fmt.Sprintf("%s%s", expectStruct, res.Types.ListIdentifier())
+		whenStruct := fmt.Sprintf("%s%sWhen", mockedStructName, f.Name)
+		whenStructRef := fmt.Sprintf("%s%s", whenStruct, res.Types.ListIdentifier())
 
 		hasParams := len(f.Params) > 0
 		hasReturnValues := len(f.Results) > 0
 
-		ref := whenNoArgsStructRef
+		ref := whenStructRef
 		if hasParams {
-			ref = whenArgsStructRef
+			ref = expectStructRef
 		}
+		w.P("// Defines the behavior when %s of the mock is called.", f.Name)
+		w.P("//")
+		w.P("// As a default the method can be called any times.")
+		w.P("// To change this behavior use the Times() method to define how often the function shall be called.")
 		w.P("func (_this *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
 		w.Ident()
 
@@ -204,35 +239,37 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		w.Ident()
 		w.P("fun func%s", f.Signature())
 		w.P("validateArgs func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
+		w.P("expectedCalled int")
+		w.P("called int")
 		w.EndIdent()
 		w.P("}")
 		ret := ""
 		if hasReturnValues {
-			ret = "return "
+			ret = " return "
 		}
-		w.P("validator.fun = func%s { %s}", f.Signature(), ret)
+		w.P("validator.fun = func%s {%s}", f.Signature(), ret)
+		w.P("validator.expectedCalled = -1")
 		w.P("_this.m.v%s = append(_this.m.v%s, &validator)", f.Name, f.Name)
+		whenReturn := fmt.Sprintf("&%s{fun: &validator.fun, %s: &%s{expectedCalled: &validator.expectedCalled}}",
+			whenStructRef, timesStruct, timesStruct)
 		if hasParams {
-			w.P("return &%s {", whenArgsStructRef)
+			w.P("return &%s {", expectStructRef)
 			w.Ident()
-			w.P("%s: %s{fun: &validator.fun},", whenNoArgsStruct, whenNoArgsStructRef)
+			w.P("%s: %s,", whenStruct, whenReturn)
 			w.P("validateArgs: &validator.validateArgs,")
+			w.EndIdent()
+			w.P("}")
 		} else {
-			w.P("return &%s {", whenNoArgsStructRef)
-			w.Ident()
+			w.P("return %s ", whenReturn)
 		}
-		w.P("fun: &validator.fun,")
-		w.EndIdent()
-		w.P("}")
 		w.EndIdent()
 		w.P("}")
 		w.P("")
 
 		if hasParams {
-			w.P("type %s%s struct {", whenArgsStruct, res.Types.ListTypesWithIdentifiers())
+			w.P("type %s%s struct {", expectStruct, res.Types.ListTypesWithIdentifiers())
 			w.Ident()
-			w.P("%s", whenNoArgsStructRef)
-			w.P("fun *func%s", f.Signature())
+			w.P("*%s", whenStructRef)
 			w.P("validateArgs *func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
 			w.EndIdent()
 			w.P("}")
@@ -257,7 +294,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 					args += ", "
 				}
 			}
-			w.P("func (_this *%s) Expect(%s) *%s {", whenArgsStructRef, args, whenNoArgsStructRef)
+			w.P("func (_this *%s) Expect(%s) *%s {", expectStructRef, args, whenStructRef)
 			w.Ident()
 			matchString := ""
 			checkAllNil := ""
@@ -303,37 +340,76 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 			w.P("}")
 			w.EndIdent()
 			w.P("}")
-			w.P("return &_this.%s", whenNoArgsStruct)
+			w.P("return _this.%s", whenStruct)
 			w.EndIdent()
 			w.P("}")
 			w.P("")
 		}
 
-		w.P("type %s%s struct {", whenNoArgsStruct, res.Types.ListTypesWithIdentifiers())
+		w.P("type %s%s struct {", whenStruct, res.Types.ListTypesWithIdentifiers())
 		w.Ident()
+		w.P("*%s", timesStruct)
 		w.P("fun *func%s", f.Signature())
 		w.EndIdent()
 		w.P("}")
 		w.P("")
 
 		if hasReturnValues {
-			w.P("func (_this *%s) Return(%s) {", whenNoArgsStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult))
+			w.P("func (_this *%s) Return(%s) *%s {", whenStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult), timesStruct)
 			w.Ident()
 			w.P("*_this.fun = func%s { return %s }", f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
+			w.P("return _this.%s", timesStruct)
 			w.EndIdent()
 			w.P("}")
 			w.P("")
 		}
 
-		w.P("func (_this *%s) Do(do func%s) {", whenNoArgsStructRef, f.Signature())
+		w.P("func (_this *%s) Do(do func%s) *%s {", whenStructRef, f.Signature(), timesStruct)
 		w.Ident()
 		w.P("*_this.fun = do")
+		w.P("return _this.%s", timesStruct)
 		w.EndIdent()
 		w.P("}")
 		if idx < len(res.Methods)-1 {
 			w.P("")
 		}
 	}
+
+	w.P("")
+	w.P("type %s struct {", timesStruct)
+	w.Ident()
+	w.P("expectedCalled *int")
+	w.EndIdent()
+	w.P("}")
+	w.P("")
+
+	w.P("func (_this *%s) Times(times int) {", timesStruct)
+	w.Ident()
+	w.P("*_this.expectedCalled = times")
+	w.EndIdent()
+	w.P("}")
+	w.P("")
+
+	w.P("func (_this *%s) AnyTimes() {", timesStruct)
+	w.Ident()
+	w.P("*_this.expectedCalled = -1")
+	w.EndIdent()
+	w.P("}")
+	w.P("")
+
+	w.P("func (_this *%s) Never() {", timesStruct)
+	w.Ident()
+	w.P("*_this.expectedCalled = 0")
+	w.EndIdent()
+	w.P("}")
+	w.P("")
+
+	w.P("func (_this *%s) Once() {", timesStruct)
+	w.Ident()
+	w.P("*_this.expectedCalled = 1")
+	w.EndIdent()
+	w.P("}")
+
 	logger.Printf("Finished generating mock")
 
 	return w.buff.Bytes(), nil

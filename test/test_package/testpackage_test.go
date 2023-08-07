@@ -87,9 +87,50 @@ func TestUnexpected(t *testing.T) {
 	assert.Equal(t, `Unexpected call Bar(1, "2", {}, &{}, true, [1 2 3])`, tester.errStr)
 }
 
+func TestAnyTimes(t *testing.T) {
+	times(t, -1, 30, "")
+	times(t, -1, 1, "")
+	times(t, -1, 0, "")
+}
+func TestNeverFail(t *testing.T) {
+	times(t, 0, 1, "Expected 'Foo' to be called 0 times, but was called 1 times.")
+	times(t, 0, 2, "Expected 'Foo' to be called 0 times, but was called 2 times.")
+}
+func TestNeverSuccess(t *testing.T) {
+	times(t, 0, 0, "")
+}
+func TestOnceFail(t *testing.T) {
+	times(t, 1, 0, "Expected 'Foo' to be called 1 times, but was called 0 times.")
+	times(t, 1, 2, "Expected 'Foo' to be called 1 times, but was called 2 times.")
+}
+func TestOnceSuccess(t *testing.T) {
+	times(t, 1, 1, "")
+}
+func times(t *testing.T, expected, times int, err string) {
+	tester := &Tester{t: t}
+	m := testpackage_mock.NewMockSimple(tester)
+	m.WHEN().Foo().Times(expected)
+	m.WHEN().Bar().Return("").Times(expected)
+	m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 }).Times(expected)
+	m.WHEN().SingleArg().AnyTimes()
+	m.SingleArg(1)
+	for i := 0; i < times; i++ {
+		m.Foo()
+		m.Bar(0, "", struct{}{}, nil, nil, nil)
+		m.SingleArg(42)
+	}
+	tester.cleanup()
+	if err != "" {
+		assert.Contains(t, tester.errStr, err)
+	} else {
+		assert.Empty(t, tester.errStr)
+	}
+}
+
 type Tester struct {
-	t      *testing.T
-	errStr string
+	t       *testing.T
+	errStr  string
+	cleanup func()
 }
 
 func (t *Tester) Fatalf(format string, args ...interface{}) {
@@ -100,4 +141,8 @@ func (t *Tester) Helper() {
 	if t.t != nil {
 		t.t.Helper()
 	}
+}
+
+func (t *Tester) Cleanup(c func()) {
+	t.cleanup = c
 }

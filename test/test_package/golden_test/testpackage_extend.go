@@ -11,29 +11,52 @@ import (
 	"reflect"
 )
 
-// MockExtend must implement interface testpackage.Extend
-var _ testpackage.Extend = &MockExtend{}
+// mockExtend must implement interface testpackage.Extend
+var _ testpackage.Extend = &mockExtend{}
 
+// NewMockExtend creates a new mock object which implements the corresponding interface.
+// All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockExtend(t interface {
 	Fatalf(format string, args ...interface{})
 	Helper()
-}) *MockExtend {
-	return &MockExtend{t: t}
+	Cleanup(f func())
+}) *mockExtend {
+	t.Helper()
+	m := &mockExtend{t: t}
+	t.Cleanup(func () {
+		errStr := ""
+		for _, v := range m.vRetType {
+			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
+				errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			}
+		}
+		for _, v := range m.vUseStdType {
+			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
+				errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			}
+		}
+		if errStr != "" {
+			t.Helper()
+			t.Fatalf(errStr)
+		}
+	})
+	return m
 }
 
-type MockExtend struct {
+type mockExtend struct {
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
 	
-	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool}
-	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool}
+	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool; expectedCalled int; called int}
+	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool; expectedCalled int; called int}
 }
 
-func (_this *MockExtend) RetType() (r0 testpackage.MyType) {
+func (_this *mockExtend) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
+			_check.called++
 			return _check.fun()
 		}
 	}
@@ -42,9 +65,10 @@ func (_this *MockExtend) RetType() (r0 testpackage.MyType) {
 	return
 }
 
-func (_this *MockExtend) UseStdType(fi os.FileInfo) (r0 io.Reader) {
+func (_this *mockExtend) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
+			_check.called++
 			return _check.fun(fi)
 		}
 	}
@@ -53,7 +77,7 @@ func (_this *MockExtend) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	return
 }
 
-func (_this *MockExtend) unexpectedCall(method string, args ...any) {
+func (_this *mockExtend) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
 		switch t := reflect.TypeOf(arg); {
@@ -72,17 +96,23 @@ func (_this *MockExtend) unexpectedCall(method string, args ...any) {
 	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
 }
 
-func (_this *MockExtend) WHEN() *MockExtendWhen {
-	return &MockExtendWhen{
+// WHEN is used to set the mock behavior when a specific functions on the object are called.
+// Use this to setup your mock for your specific test scenario.
+func (_this *mockExtend) WHEN() *mockExtendWhen {
+	return &mockExtendWhen{
 		m: _this,
 	}
 }
 
-type MockExtendWhen struct {
-	m *MockExtend
+type mockExtendWhen struct {
+	m *mockExtend
 }
 
-func (_this *MockExtendWhen) RetType() *MockExtendRetTypeArgsEval {
+// Defines the behavior when RetType of the mock is called.
+//
+// As a default the method can be called any times.
+// To change this behavior use the Times() method to define how often the function shall be called.
+func (_this *mockExtendWhen) RetType() *mockExtendRetTypeWhen {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -92,27 +122,35 @@ func (_this *MockExtendWhen) RetType() *MockExtendRetTypeArgsEval {
 	var validator struct {
 		fun func() (r0 testpackage.MyType)
 		validateArgs func() bool
+		expectedCalled int
+		called int
 	}
 	validator.fun = func() (r0 testpackage.MyType) { return }
+	validator.expectedCalled = -1
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
-	return &MockExtendRetTypeArgsEval {
-		fun: &validator.fun,
-	}
+	return &mockExtendRetTypeWhen{fun: &validator.fun, mockExtendTimes: &mockExtendTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type MockExtendRetTypeArgsEval struct {
+type mockExtendRetTypeWhen struct {
+	*mockExtendTimes
 	fun *func() (r0 testpackage.MyType)
 }
 
-func (_this *MockExtendRetTypeArgsEval) Return(r0 testpackage.MyType) {
+func (_this *mockExtendRetTypeWhen) Return(r0 testpackage.MyType) *mockExtendTimes {
 	*_this.fun = func() (testpackage.MyType) { return r0 }
+	return _this.mockExtendTimes
 }
 
-func (_this *MockExtendRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
+func (_this *mockExtendRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *mockExtendTimes {
 	*_this.fun = do
+	return _this.mockExtendTimes
 }
 
-func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeArgs {
+// Defines the behavior when UseStdType of the mock is called.
+//
+// As a default the method can be called any times.
+// To change this behavior use the Times() method to define how often the function shall be called.
+func (_this *mockExtendWhen) UseStdType() *mockExtendUseStdTypeExpect {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -122,39 +160,63 @@ func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeArgs {
 	var validator struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		validateArgs func(fi os.FileInfo) bool
+		expectedCalled int
+		called int
 	}
 	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+	validator.expectedCalled = -1
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
-	return &MockExtendUseStdTypeArgs {
-		MockExtendUseStdTypeArgsEval: MockExtendUseStdTypeArgsEval{fun: &validator.fun},
+	return &mockExtendUseStdTypeExpect {
+		mockExtendUseStdTypeWhen: &mockExtendUseStdTypeWhen{fun: &validator.fun, mockExtendTimes: &mockExtendTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
-		fun: &validator.fun,
 	}
 }
 
-type MockExtendUseStdTypeArgs struct {
-	MockExtendUseStdTypeArgsEval
-	fun *func(fi os.FileInfo) (r0 io.Reader)
+type mockExtendUseStdTypeExpect struct {
+	*mockExtendUseStdTypeWhen
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (_this *MockExtendUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockExtendUseStdTypeArgsEval {
+func (_this *mockExtendUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *mockExtendUseStdTypeWhen {
 	if !(fi == nil) {
 		*_this.validateArgs = func(_fi os.FileInfo) bool {
 			return (fi == nil || fi(_fi))
 		}
 	}
-	return &_this.MockExtendUseStdTypeArgsEval
+	return _this.mockExtendUseStdTypeWhen
 }
 
-type MockExtendUseStdTypeArgsEval struct {
+type mockExtendUseStdTypeWhen struct {
+	*mockExtendTimes
 	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
-func (_this *MockExtendUseStdTypeArgsEval) Return(r0 io.Reader) {
+func (_this *mockExtendUseStdTypeWhen) Return(r0 io.Reader) *mockExtendTimes {
 	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
+	return _this.mockExtendTimes
 }
 
-func (_this *MockExtendUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
+func (_this *mockExtendUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *mockExtendTimes {
 	*_this.fun = do
+	return _this.mockExtendTimes
+}
+
+type mockExtendTimes struct {
+	expectedCalled *int
+}
+
+func (_this *mockExtendTimes) Times(times int) {
+	*_this.expectedCalled = times
+}
+
+func (_this *mockExtendTimes) AnyTimes() {
+	*_this.expectedCalled = -1
+}
+
+func (_this *mockExtendTimes) Never() {
+	*_this.expectedCalled = 0
+}
+
+func (_this *mockExtendTimes) Once() {
+	*_this.expectedCalled = 1
 }

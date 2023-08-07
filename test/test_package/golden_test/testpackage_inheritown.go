@@ -11,29 +11,52 @@ import (
 	"reflect"
 )
 
-// MockInheritOwn must implement interface testpackage.InheritOwn
-var _ testpackage.InheritOwn = &MockInheritOwn{}
+// mockInheritOwn must implement interface testpackage.InheritOwn
+var _ testpackage.InheritOwn = &mockInheritOwn{}
 
+// NewMockInheritOwn creates a new mock object which implements the corresponding interface.
+// All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockInheritOwn(t interface {
 	Fatalf(format string, args ...interface{})
 	Helper()
-}) *MockInheritOwn {
-	return &MockInheritOwn{t: t}
+	Cleanup(f func())
+}) *mockInheritOwn {
+	t.Helper()
+	m := &mockInheritOwn{t: t}
+	t.Cleanup(func () {
+		errStr := ""
+		for _, v := range m.vRetType {
+			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
+				errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			}
+		}
+		for _, v := range m.vUseStdType {
+			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
+				errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			}
+		}
+		if errStr != "" {
+			t.Helper()
+			t.Fatalf(errStr)
+		}
+	})
+	return m
 }
 
-type MockInheritOwn struct {
+type mockInheritOwn struct {
 	t interface {
 		Fatalf(format string, args ...interface{})
 		Helper()
 	}
 	
-	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool}
-	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool}
+	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool; expectedCalled int; called int}
+	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool; expectedCalled int; called int}
 }
 
-func (_this *MockInheritOwn) RetType() (r0 testpackage.MyType) {
+func (_this *mockInheritOwn) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
+			_check.called++
 			return _check.fun()
 		}
 	}
@@ -42,9 +65,10 @@ func (_this *MockInheritOwn) RetType() (r0 testpackage.MyType) {
 	return
 }
 
-func (_this *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
+func (_this *mockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
+			_check.called++
 			return _check.fun(fi)
 		}
 	}
@@ -53,7 +77,7 @@ func (_this *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	return
 }
 
-func (_this *MockInheritOwn) unexpectedCall(method string, args ...any) {
+func (_this *mockInheritOwn) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
 		switch t := reflect.TypeOf(arg); {
@@ -72,17 +96,23 @@ func (_this *MockInheritOwn) unexpectedCall(method string, args ...any) {
 	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
 }
 
-func (_this *MockInheritOwn) WHEN() *MockInheritOwnWhen {
-	return &MockInheritOwnWhen{
+// WHEN is used to set the mock behavior when a specific functions on the object are called.
+// Use this to setup your mock for your specific test scenario.
+func (_this *mockInheritOwn) WHEN() *mockInheritOwnWhen {
+	return &mockInheritOwnWhen{
 		m: _this,
 	}
 }
 
-type MockInheritOwnWhen struct {
-	m *MockInheritOwn
+type mockInheritOwnWhen struct {
+	m *mockInheritOwn
 }
 
-func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
+// Defines the behavior when RetType of the mock is called.
+//
+// As a default the method can be called any times.
+// To change this behavior use the Times() method to define how often the function shall be called.
+func (_this *mockInheritOwnWhen) RetType() *mockInheritOwnRetTypeWhen {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -92,27 +122,35 @@ func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeArgsEval {
 	var validator struct {
 		fun func() (r0 testpackage.MyType)
 		validateArgs func() bool
+		expectedCalled int
+		called int
 	}
 	validator.fun = func() (r0 testpackage.MyType) { return }
+	validator.expectedCalled = -1
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
-	return &MockInheritOwnRetTypeArgsEval {
-		fun: &validator.fun,
-	}
+	return &mockInheritOwnRetTypeWhen{fun: &validator.fun, mockInheritOwnTimes: &mockInheritOwnTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type MockInheritOwnRetTypeArgsEval struct {
+type mockInheritOwnRetTypeWhen struct {
+	*mockInheritOwnTimes
 	fun *func() (r0 testpackage.MyType)
 }
 
-func (_this *MockInheritOwnRetTypeArgsEval) Return(r0 testpackage.MyType) {
+func (_this *mockInheritOwnRetTypeWhen) Return(r0 testpackage.MyType) *mockInheritOwnTimes {
 	*_this.fun = func() (testpackage.MyType) { return r0 }
+	return _this.mockInheritOwnTimes
 }
 
-func (_this *MockInheritOwnRetTypeArgsEval) Do(do func() (r0 testpackage.MyType)) {
+func (_this *mockInheritOwnRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *mockInheritOwnTimes {
 	*_this.fun = do
+	return _this.mockInheritOwnTimes
 }
 
-func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
+// Defines the behavior when UseStdType of the mock is called.
+//
+// As a default the method can be called any times.
+// To change this behavior use the Times() method to define how often the function shall be called.
+func (_this *mockInheritOwnWhen) UseStdType() *mockInheritOwnUseStdTypeExpect {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -122,39 +160,63 @@ func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeArgs {
 	var validator struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		validateArgs func(fi os.FileInfo) bool
+		expectedCalled int
+		called int
 	}
 	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+	validator.expectedCalled = -1
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
-	return &MockInheritOwnUseStdTypeArgs {
-		MockInheritOwnUseStdTypeArgsEval: MockInheritOwnUseStdTypeArgsEval{fun: &validator.fun},
+	return &mockInheritOwnUseStdTypeExpect {
+		mockInheritOwnUseStdTypeWhen: &mockInheritOwnUseStdTypeWhen{fun: &validator.fun, mockInheritOwnTimes: &mockInheritOwnTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
-		fun: &validator.fun,
 	}
 }
 
-type MockInheritOwnUseStdTypeArgs struct {
-	MockInheritOwnUseStdTypeArgsEval
-	fun *func(fi os.FileInfo) (r0 io.Reader)
+type mockInheritOwnUseStdTypeExpect struct {
+	*mockInheritOwnUseStdTypeWhen
 	validateArgs *func(fi os.FileInfo) bool
 }
 
-func (_this *MockInheritOwnUseStdTypeArgs) Expect(fi func(os.FileInfo) bool) *MockInheritOwnUseStdTypeArgsEval {
+func (_this *mockInheritOwnUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *mockInheritOwnUseStdTypeWhen {
 	if !(fi == nil) {
 		*_this.validateArgs = func(_fi os.FileInfo) bool {
 			return (fi == nil || fi(_fi))
 		}
 	}
-	return &_this.MockInheritOwnUseStdTypeArgsEval
+	return _this.mockInheritOwnUseStdTypeWhen
 }
 
-type MockInheritOwnUseStdTypeArgsEval struct {
+type mockInheritOwnUseStdTypeWhen struct {
+	*mockInheritOwnTimes
 	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
-func (_this *MockInheritOwnUseStdTypeArgsEval) Return(r0 io.Reader) {
+func (_this *mockInheritOwnUseStdTypeWhen) Return(r0 io.Reader) *mockInheritOwnTimes {
 	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
+	return _this.mockInheritOwnTimes
 }
 
-func (_this *MockInheritOwnUseStdTypeArgsEval) Do(do func(fi os.FileInfo) (r0 io.Reader)) {
+func (_this *mockInheritOwnUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *mockInheritOwnTimes {
 	*_this.fun = do
+	return _this.mockInheritOwnTimes
+}
+
+type mockInheritOwnTimes struct {
+	expectedCalled *int
+}
+
+func (_this *mockInheritOwnTimes) Times(times int) {
+	*_this.expectedCalled = times
+}
+
+func (_this *mockInheritOwnTimes) AnyTimes() {
+	*_this.expectedCalled = -1
+}
+
+func (_this *mockInheritOwnTimes) Never() {
+	*_this.expectedCalled = 0
+}
+
+func (_this *mockInheritOwnTimes) Once() {
+	*_this.expectedCalled = 1
 }

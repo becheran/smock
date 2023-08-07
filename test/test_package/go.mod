@@ -2,10 +2,7 @@ module github.com/test/testpackage
 
 go 1.20
 
-require (
-	github.com/stretchr/testify v1.8.4
-	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
-)
+require github.com/stretchr/testify v1.8.4
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
