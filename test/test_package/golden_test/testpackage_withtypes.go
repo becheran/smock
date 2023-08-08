@@ -133,6 +133,10 @@ type mockWithTypesFooExpect[T any, B any] struct {
 	validateArgs *func(a T, b T) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockWithTypesFooExpect[T, B]) Expect(a func(T) bool, b func(T) bool) *mockWithTypesFooWhen[T, B] {
 	if !(a == nil && b == nil) {
 		*_this.validateArgs = func(_a T, _b T) bool {
@@ -147,11 +151,13 @@ type mockWithTypesFooWhen[T any, B any] struct {
 	fun *func(a T, b T) (r0 B)
 }
 
+// Return the provided values when called
 func (_this *mockWithTypesFooWhen[T, B]) Return(r0 B) *mockWithTypesTimes {
 	*_this.fun = func(T, T) (B) { return r0 }
 	return _this.mockWithTypesTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockWithTypesFooWhen[T, B]) Do(do func(a T, b T) (r0 B)) *mockWithTypesTimes {
 	*_this.fun = do
 	return _this.mockWithTypesTimes
@@ -185,6 +191,7 @@ type mockWithTypesEmptyWhen[T any, B any] struct {
 	fun *func()
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockWithTypesEmptyWhen[T, B]) Do(do func()) *mockWithTypesTimes {
 	*_this.fun = do
 	return _this.mockWithTypesTimes
@@ -194,18 +201,25 @@ type mockWithTypesTimes struct {
 	expectedCalled *int
 }
 
+// Times sets how often the mocked function is expected to be called.
+// Test will fail if the number of calls do not match with the expected calls value.
+//
+// A number < 0 means that a function may be called any times which is also the default behavior.
 func (_this *mockWithTypesTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
+// AnyTimes disables the check how often a function was called.
 func (_this *mockWithTypesTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
+// Never will fail if the function is ever called. Is the same as Times(0).
 func (_this *mockWithTypesTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
+// Once will fail if the function is not called once. Is the same as Times(1).
 func (_this *mockWithTypesTimes) Once() {
 	*_this.expectedCalled = 1
 }

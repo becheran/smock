@@ -151,6 +151,10 @@ type mockWithLambdaFooExpect[T comparable] struct {
 	validateArgs *func(a int, b ...string) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockWithLambdaFooExpect[T]) Expect(a func(int) bool, b ...func(string) bool) *mockWithLambdaFooWhen[T] {
 	if !(a == nil && len(b) == 0) {
 		*_this.validateArgs = func(_a int, _b ...string) bool {
@@ -170,11 +174,13 @@ type mockWithLambdaFooWhen[T comparable] struct {
 	fun *func(a int, b ...string) (r0 bool)
 }
 
+// Return the provided values when called
 func (_this *mockWithLambdaFooWhen[T]) Return(r0 bool) *mockWithLambdaTimes {
 	*_this.fun = func(int, ...string) (bool) { return r0 }
 	return _this.mockWithLambdaTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockWithLambdaFooWhen[T]) Do(do func(a int, b ...string) (r0 bool)) *mockWithLambdaTimes {
 	*_this.fun = do
 	return _this.mockWithLambdaTimes
@@ -211,6 +217,10 @@ type mockWithLambdaBarExpect[T comparable] struct {
 	validateArgs *func(b ...struct{}) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockWithLambdaBarExpect[T]) Expect(b ...func(struct{}) bool) *mockWithLambdaBarWhen[T] {
 	if !(len(b) == 0) {
 		*_this.validateArgs = func(_b ...struct{}) bool {
@@ -230,11 +240,13 @@ type mockWithLambdaBarWhen[T comparable] struct {
 	fun *func(b ...struct{}) (r0 bool)
 }
 
+// Return the provided values when called
 func (_this *mockWithLambdaBarWhen[T]) Return(r0 bool) *mockWithLambdaTimes {
 	*_this.fun = func(...struct{}) (bool) { return r0 }
 	return _this.mockWithLambdaTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockWithLambdaBarWhen[T]) Do(do func(b ...struct{}) (r0 bool)) *mockWithLambdaTimes {
 	*_this.fun = do
 	return _this.mockWithLambdaTimes
@@ -271,6 +283,10 @@ type mockWithLambdaBazExpect[T comparable] struct {
 	validateArgs *func(b ...T) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockWithLambdaBazExpect[T]) Expect(b ...func(T) bool) *mockWithLambdaBazWhen[T] {
 	if !(len(b) == 0) {
 		*_this.validateArgs = func(_b ...T) bool {
@@ -290,11 +306,13 @@ type mockWithLambdaBazWhen[T comparable] struct {
 	fun *func(b ...T) (r0 bool)
 }
 
+// Return the provided values when called
 func (_this *mockWithLambdaBazWhen[T]) Return(r0 bool) *mockWithLambdaTimes {
 	*_this.fun = func(...T) (bool) { return r0 }
 	return _this.mockWithLambdaTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockWithLambdaBazWhen[T]) Do(do func(b ...T) (r0 bool)) *mockWithLambdaTimes {
 	*_this.fun = do
 	return _this.mockWithLambdaTimes
@@ -304,18 +322,25 @@ type mockWithLambdaTimes struct {
 	expectedCalled *int
 }
 
+// Times sets how often the mocked function is expected to be called.
+// Test will fail if the number of calls do not match with the expected calls value.
+//
+// A number < 0 means that a function may be called any times which is also the default behavior.
 func (_this *mockWithLambdaTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
+// AnyTimes disables the check how often a function was called.
 func (_this *mockWithLambdaTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
+// Never will fail if the function is ever called. Is the same as Times(0).
 func (_this *mockWithLambdaTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
+// Once will fail if the function is not called once. Is the same as Times(1).
 func (_this *mockWithLambdaTimes) Once() {
 	*_this.expectedCalled = 1
 }

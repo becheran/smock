@@ -136,11 +136,13 @@ type mockExtendRetTypeWhen struct {
 	fun *func() (r0 testpackage.MyType)
 }
 
+// Return the provided values when called
 func (_this *mockExtendRetTypeWhen) Return(r0 testpackage.MyType) *mockExtendTimes {
 	*_this.fun = func() (testpackage.MyType) { return r0 }
 	return _this.mockExtendTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockExtendRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *mockExtendTimes {
 	*_this.fun = do
 	return _this.mockExtendTimes
@@ -177,6 +179,10 @@ type mockExtendUseStdTypeExpect struct {
 	validateArgs *func(fi os.FileInfo) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockExtendUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *mockExtendUseStdTypeWhen {
 	if !(fi == nil) {
 		*_this.validateArgs = func(_fi os.FileInfo) bool {
@@ -191,11 +197,13 @@ type mockExtendUseStdTypeWhen struct {
 	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
+// Return the provided values when called
 func (_this *mockExtendUseStdTypeWhen) Return(r0 io.Reader) *mockExtendTimes {
 	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
 	return _this.mockExtendTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockExtendUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *mockExtendTimes {
 	*_this.fun = do
 	return _this.mockExtendTimes
@@ -205,18 +213,25 @@ type mockExtendTimes struct {
 	expectedCalled *int
 }
 
+// Times sets how often the mocked function is expected to be called.
+// Test will fail if the number of calls do not match with the expected calls value.
+//
+// A number < 0 means that a function may be called any times which is also the default behavior.
 func (_this *mockExtendTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
+// AnyTimes disables the check how often a function was called.
 func (_this *mockExtendTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
+// Never will fail if the function is ever called. Is the same as Times(0).
 func (_this *mockExtendTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
+// Once will fail if the function is not called once. Is the same as Times(1).
 func (_this *mockExtendTimes) Once() {
 	*_this.expectedCalled = 1
 }

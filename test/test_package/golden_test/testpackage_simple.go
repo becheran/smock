@@ -188,6 +188,7 @@ type mockSimpleFooWhen struct {
 	fun *func()
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockSimpleFooWhen) Do(do func()) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
@@ -224,6 +225,10 @@ type mockSimpleSingleArgExpect struct {
 	validateArgs *func(i0 int) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockSimpleSingleArgExpect) Expect(_0 func(int) bool) *mockSimpleSingleArgWhen {
 	if !(_0 == nil) {
 		*_this.validateArgs = func(_i0 int) bool {
@@ -238,6 +243,7 @@ type mockSimpleSingleArgWhen struct {
 	fun *func(i0 int)
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockSimpleSingleArgWhen) Do(do func(i0 int)) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
@@ -274,6 +280,10 @@ type mockSimpleBarExpect struct {
 	validateArgs *func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockSimpleBarExpect) Expect(a func(int) bool, b func(string) bool, c func(struct{}) bool, d func(*struct{}) bool, e func(interface{}) bool, f func([]byte) bool) *mockSimpleBarWhen {
 	if !(a == nil && b == nil && c == nil && d == nil && e == nil && f == nil) {
 		*_this.validateArgs = func(_a int, _b string, _c struct{}, _d *struct{}, _e interface{}, _f []byte) bool {
@@ -288,11 +298,13 @@ type mockSimpleBarWhen struct {
 	fun *func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string)
 }
 
+// Return the provided values when called
 func (_this *mockSimpleBarWhen) Return(r0 string) *mockSimpleTimes {
 	*_this.fun = func(int, string, struct{}, *struct{}, interface{}, []byte) (string) { return r0 }
 	return _this.mockSimpleTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockSimpleBarWhen) Do(do func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string)) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
@@ -329,6 +341,10 @@ type mockSimpleBazExpect struct {
 	validateArgs *func(a int, b string) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockSimpleBazExpect) Expect(a func(int) bool, b func(string) bool) *mockSimpleBazWhen {
 	if !(a == nil && b == nil) {
 		*_this.validateArgs = func(_a int, _b string) bool {
@@ -343,11 +359,13 @@ type mockSimpleBazWhen struct {
 	fun *func(a int, b string) (s string)
 }
 
+// Return the provided values when called
 func (_this *mockSimpleBazWhen) Return(s string) *mockSimpleTimes {
 	*_this.fun = func(int, string) (string) { return s }
 	return _this.mockSimpleTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockSimpleBazWhen) Do(do func(a int, b string) (s string)) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
@@ -384,6 +402,10 @@ type mockSimpleFunExpect struct {
 	validateArgs *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
 }
 
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *mockSimpleFunExpect) Expect(a func(func(func(string, string) (int, int), func(string, string) (int, int))) bool, b func(func(func(string, string) (int, int), func(string, string) (int, int))) bool) *mockSimpleFunWhen {
 	if !(a == nil && b == nil) {
 		*_this.validateArgs = func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
@@ -398,11 +420,13 @@ type mockSimpleFunWhen struct {
 	fun *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
 }
 
+// Return the provided values when called
 func (_this *mockSimpleFunWhen) Return(r func(), r2 func()) *mockSimpleTimes {
 	*_this.fun = func(func(func(string, string) (int, int), func(string, string) (int, int)), func(func(string, string) (int, int), func(string, string) (int, int))) (func(), func()) { return r, r2 }
 	return _this.mockSimpleTimes
 }
 
+// Do will execute the provided function and return the result when called
 func (_this *mockSimpleFunWhen) Do(do func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
@@ -412,18 +436,25 @@ type mockSimpleTimes struct {
 	expectedCalled *int
 }
 
+// Times sets how often the mocked function is expected to be called.
+// Test will fail if the number of calls do not match with the expected calls value.
+//
+// A number < 0 means that a function may be called any times which is also the default behavior.
 func (_this *mockSimpleTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
+// AnyTimes disables the check how often a function was called.
 func (_this *mockSimpleTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
+// Never will fail if the function is ever called. Is the same as Times(0).
 func (_this *mockSimpleTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
+// Once will fail if the function is not called once. Is the same as Times(1).
 func (_this *mockSimpleTimes) Once() {
 	*_this.expectedCalled = 1
 }

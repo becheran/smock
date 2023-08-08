@@ -294,6 +294,10 @@ func NewMock%s%s(t interface {
 					args += ", "
 				}
 			}
+			w.P("// Expect will filter for given arguments.")
+			w.P("// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.")
+			w.P("")
+			w.P("// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.")
 			w.P("func (_this *%s) Expect(%s) *%s {", expectStructRef, args, whenStructRef)
 			w.Ident()
 			matchString := ""
@@ -355,6 +359,7 @@ func NewMock%s%s(t interface {
 		w.P("")
 
 		if hasReturnValues {
+			w.P("// Return the provided values when called")
 			w.P("func (_this *%s) Return(%s) *%s {", whenStructRef, f.Results.IdentWithTypeString(model.IdentTypeResult), timesStruct)
 			w.Ident()
 			w.P("*_this.fun = func%s { return %s }", f.SignatureWithoutIdentifier(), f.Results.IdentString(model.IdentTypeResult, false))
@@ -364,6 +369,7 @@ func NewMock%s%s(t interface {
 			w.P("")
 		}
 
+		w.P("// Do will execute the provided function and return the result when called")
 		w.P("func (_this *%s) Do(do func%s) *%s {", whenStructRef, f.Signature(), timesStruct)
 		w.Ident()
 		w.P("*_this.fun = do")
@@ -383,6 +389,10 @@ func NewMock%s%s(t interface {
 	w.P("}")
 	w.P("")
 
+	w.P("// Times sets how often the mocked function is expected to be called.")
+	w.P("// Test will fail if the number of calls do not match with the expected calls value.")
+	w.P("//")
+	w.P("// A number < 0 means that a function may be called any times which is also the default behavior.")
 	w.P("func (_this *%s) Times(times int) {", timesStruct)
 	w.Ident()
 	w.P("*_this.expectedCalled = times")
@@ -390,6 +400,7 @@ func NewMock%s%s(t interface {
 	w.P("}")
 	w.P("")
 
+	w.P("// AnyTimes disables the check how often a function was called.")
 	w.P("func (_this *%s) AnyTimes() {", timesStruct)
 	w.Ident()
 	w.P("*_this.expectedCalled = -1")
@@ -397,6 +408,7 @@ func NewMock%s%s(t interface {
 	w.P("}")
 	w.P("")
 
+	w.P("// Never will fail if the function is ever called. Is the same as Times(0).")
 	w.P("func (_this *%s) Never() {", timesStruct)
 	w.Ident()
 	w.P("*_this.expectedCalled = 0")
@@ -404,6 +416,7 @@ func NewMock%s%s(t interface {
 	w.P("}")
 	w.P("")
 
+	w.P("// Once will fail if the function is not called once. Is the same as Times(1).")
 	w.P("func (_this *%s) Once() {", timesStruct)
 	w.Ident()
 	w.P("*_this.expectedCalled = 1")
