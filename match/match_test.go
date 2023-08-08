@@ -1,6 +1,7 @@
 package match_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/becheran/smock/match"
@@ -57,4 +58,14 @@ func TestMapEq(t *testing.T) {
 	assert.False(t, match.MapEq(map[int]int{0: 1})(map[int]int{1: 1}))
 	assert.False(t, match.MapEq(map[int]int{0: 1})(map[int]int{1: 1, 0: 1}))
 	assert.True(t, match.MapEq(map[int]int{0: 1})(map[int]int{0: 1}))
+}
+
+func Example() {
+	fmt.Println(match.Eq("foo").Or(match.Eq("bar"))("foo"))
+	fmt.Println(match.Eq(1).Or(match.Eq(2))(3))
+	fmt.Println(match.Not(match.Eq(1))(1))
+	// Output:
+	// true
+	// false
+	// false
 }

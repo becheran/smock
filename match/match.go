@@ -1,3 +1,8 @@
+// Package match contains match functions which can be used to create expressions that evaluate to a truth value.
+//
+// All functions in this package result in a [Match] type which is simply a function with one generic input and a bool return value.
+// The combination functions [Match.And] and [Match.Or] can be used to combine two [Match] expressions.
+// [Not] will negate a [Match] expression.
 package match
 
 // Match is a simple expression which evaluates to be either 'true' or 'false'
