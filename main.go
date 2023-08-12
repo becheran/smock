@@ -1,3 +1,4 @@
+// Smock is a mocking library to generate mocks for go interfaces.
 package main
 
 import (
@@ -8,8 +9,8 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	"github.com/becheran/smock/internal/annotated"
 	"github.com/becheran/smock/internal/logger"
-	"github.com/becheran/smock/internal/smock"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	if dbg {
-		logger.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile))
+		logger.EnableLogger()
 		logger.Printf("Debug mode enabled\n")
 	}
 
@@ -51,5 +52,5 @@ func main() {
 	}
 	file := fmt.Sprintf("%s/%s", wd, fileName)
 
-	smock.GenerateMocks(file, line)
+	annotated.GenerateMocks(file, line)
 }

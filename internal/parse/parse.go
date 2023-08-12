@@ -28,12 +28,12 @@ func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.In
 func ParseInterfaceInFile(file *ast.File, interfaceName, path string) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface %s in file '%s'", interfaceName, file.Name)
 	for _, decl := range file.Decls {
-		ts, err := getTypeSpec(decl)
+		ts, err := GetTypeSpec(decl)
 		if err != nil {
 			continue
 		}
 		if ts.Name.Name == interfaceName {
-			return parseInterface(ts, file.Name.Name, path, file.Imports)
+			return ParseInterface(ts, file.Name.Name, path, file.Imports)
 		}
 	}
 	return model.InterfaceResult{}, fmt.Errorf("interface %s not found in file %s", interfaceName, file.Name)
@@ -49,18 +49,18 @@ func ParseInterfaceAtPosition(fset *token.FileSet, file *ast.File, startLine int
 			continue
 		}
 
-		ts, err := getTypeSpec(decl)
+		ts, err := GetTypeSpec(decl)
 		if err != nil {
 			return model.InterfaceResult{}, err
 		}
 
-		return parseInterface(ts, file.Name.Name, "./", file.Imports)
+		return ParseInterface(ts, file.Name.Name, "./", file.Imports)
 	}
 
 	return model.InterfaceResult{}, fmt.Errorf("interface at %s:%d not found", file.Name, startLine)
 }
 
-func parseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.ImportSpec) (i model.InterfaceResult, err error) {
+func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.ImportSpec) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface '%s' in file '%s'", ts.Name.Name, file)
 	dir := path.Dir(pathhelper.PathToUnix(file))
 
@@ -401,7 +401,7 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 	return identType
 }
 
-func getTypeSpec(decl ast.Decl) (ts *ast.TypeSpec, err error) {
+func GetTypeSpec(decl ast.Decl) (ts *ast.TypeSpec, err error) {
 	x, ok := decl.(*ast.GenDecl)
 	if !ok {
 		return nil, fmt.Errorf("unexpected decl type %T", decl)

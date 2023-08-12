@@ -12,41 +12,52 @@ import (
 
 var rootDir = "."
 
-const modName = "go.mod"
+const MOD_NAME = "go.mod"
 
 type ModInfo struct {
 	Path       string
 	ModuleName string
 }
 
-func FindMod(startFile string) (info ModInfo, err error) {
-	dir := path.Dir(pathhelper.PathToUnix(startFile))
+func FindMod(startPath string) (info ModInfo, err error) {
+	fileInfo, err := os.Stat(startPath)
+	if err != nil {
+		return ModInfo{}, err
+	}
+	dir := pathhelper.PathToUnix(startPath)
+	if !fileInfo.IsDir() {
+		dir = path.Dir(dir)
+	}
 	for {
-		modFile := path.Join(dir, modName)
+		modFile := path.Join(dir, MOD_NAME)
 		if _, existsErr := os.Stat(modFile); existsErr == nil {
-			file, err := os.Open(modFile)
-			if err != nil {
-				return ModInfo{}, err
-			}
-			scanner := bufio.NewScanner(file)
-			scanner.Scan()
-			firstLine := scanner.Text()
-			file.Close()
-
-			moduleName := strings.TrimPrefix(firstLine, "module ")
-			if moduleName == "" {
-				return ModInfo{}, fmt.Errorf("failed to parse module name in %s", modFile)
-			}
-			return ModInfo{
-				Path:       dir,
-				ModuleName: moduleName,
-			}, nil
+			return OpenModFile(modFile)
 		}
 		if dir == "/" || dir == "" || dir == "." || dir == rootDir {
-			return ModInfo{}, fmt.Errorf("module file '%s' for path '%s' not found", modName, startFile)
+			return ModInfo{}, fmt.Errorf("module file '%s' for path '%s' not found", MOD_NAME, startPath)
 		}
 		dir = path.Dir(dir)
 	}
+}
+
+func OpenModFile(modFile string) (ModInfo, error) {
+	file, err := os.Open(modFile)
+	if err != nil {
+		return ModInfo{}, err
+	}
+	scanner := bufio.NewScanner(file)
+	scanner.Scan()
+	firstLine := scanner.Text()
+	file.Close()
+
+	moduleName := strings.TrimPrefix(firstLine, "module ")
+	if moduleName == "" {
+		return ModInfo{}, fmt.Errorf("failed to parse module name in %s", modFile)
+	}
+	return ModInfo{
+		Path:       path.Dir(modFile),
+		ModuleName: moduleName,
+	}, nil
 }
 
 // ModImportPath returns the go import path for the given file path.

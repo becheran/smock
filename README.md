@@ -35,13 +35,15 @@ The intention of *smock* is to simplify the process of manually mocking interfac
 - Fast parsing and generation
 - No complex builtin assertion capabilities. Though, allow them to be added if needed for specific tests
 
-## Getting Started
+## Install
 
 Install latest version:
 
 ``` sh
 go install github.com/becheran/smock@latest
 ```
+
+## Create Mocks
 
 Annotate `interface` which shall be mocked:
 
@@ -59,6 +61,8 @@ go generate ./...
 ```
 
 All generated mocks will appear in the folder `mocks` of the module root. The import name for the generated mocks will be `<PackageNameOfInterface>_mock`.
+
+## Use Mocked Objects
 
 The mocked interface can be used in unit tests. They have an additional `WHEN` function to set behaviors for each exposed function of the interface. The mock can either `Do` something or `Return` fixed values when a function is called.
 
@@ -82,7 +86,7 @@ Return fixed answers:
 func TestMockMeIfYouCan(t *testing.T) {
  mock := foo_mock.NewMockMockMeIfYouCan(t)
  mock.WHEN().Foo().Return(42, nil)
- Consumer()
+ Consumer(mock)
 }
 ```
 
@@ -93,12 +97,7 @@ Assert arguments when being called:
 ``` go
 func TestMockMeIfYouCan(t *testing.T) {
  mock := gomod_test_mock.NewMockMockMeIfYouCan(t)
- mock.WHEN().Foo().Do(func(bar int, baz string) (res int, err error) {
-  if bar != 42 {
-   t.Fatal("bar must be 42")
-  }
-  return
- })
+ mock.WHEN().Foo().Expect(match.Eq(42), nil, match.Not(match.Eq("invalid")))
  Consumer(mock)
 }
 ```
@@ -113,11 +112,8 @@ func TestMockMeIfYouCan(t *testing.T) {
  ctr := 0
  mock.WHEN().Foo().Do(func(bar int, baz string) (res int, err error) {
   ctr++
-  if ctr > 2 {
-   t.Fatal("shall only be called twice")
-  }
   return ctr, nil
- })
+ }).Times(2)
  Consumer(mock)
 }
 ```

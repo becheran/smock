@@ -1,4 +1,4 @@
-package smock
+package annotated
 
 import (
 	"go/parser"

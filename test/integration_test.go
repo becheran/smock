@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/becheran/smock/internal/annotated"
 	"github.com/becheran/smock/internal/logger"
-	"github.com/becheran/smock/internal/smock"
+	"github.com/becheran/smock/smock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const testPackagePath = "./test_package"
@@ -24,26 +23,57 @@ const testGoldenFileDir = "golden_test"
 
 var generate = flag.Bool("generate", false, "generate golden files")
 
+func init() {
+	logger.EnableLogger()
+	if err := os.Chdir(testPackagePath); err != nil {
+		panic(err)
+	}
+}
+
 // BenchmarkGenerate-12    	     178	   6704438 ns/op	 1758730 B/op	   39041 allocs/op
 func BenchmarkGenerate(b *testing.B) {
-	require.Nil(b, os.Chdir(testPackagePath))
-	os.RemoveAll("./test_package/testpackage_mock")
+	os.RemoveAll("./testpackage_mock")
 	interfaces := getAnnotatedInterfaces()
 
 	for i := 0; i < b.N; i++ {
 		for _, i := range interfaces {
-			smock.GenerateMocks(i.File, i.Line)
+			annotated.GenerateMocks(i.File, i.Line)
 		}
 	}
 }
 
-func TestGenerate(t *testing.T) {
-	logger.SetLogger(log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile))
-	require.Nil(t, os.Chdir(testPackagePath))
+func TestSmockGenerateFunc(t *testing.T) {
 	os.RemoveAll("./test_package/testpackage_mock")
+
+	files := smock.GenerateMocks()
+
+	for _, i := range files {
+		source, err := os.Open(i)
+		if err != nil {
+			panic(err)
+		}
+		generated, err := io.ReadAll(source)
+		if err != nil {
+			panic(err)
+		}
+		source.Close()
+
+		goldenFilePath := goldenFilePath(i)
+		golden, err := os.ReadFile(goldenFilePath)
+		if err != nil {
+			t.Fatalf("Failed to read golden file %s. Might need generate first. %s", goldenFilePath, err)
+		}
+		assert.Nil(t, err)
+		assert.Equal(t, ToUnixLineEndings(string(golden)), ToUnixLineEndings(string(generated)))
+	}
+}
+
+func TestGenerateAnnotated(t *testing.T) {
+	os.RemoveAll("./test_package/testpackage_mock")
+
 	for _, i := range getAnnotatedInterfaces() {
 		fmt.Printf("Generate mocks for %s:%d\n", i.File, i.Line)
-		file := smock.GenerateMocks(i.File, i.Line)
+		file := annotated.GenerateMocks(i.File, i.Line)
 		source, err := os.Open(file)
 		if err != nil {
 			panic(err)
