@@ -84,7 +84,7 @@ func TestUnexpected(t *testing.T) {
 
 	m.Bar(1, "2", struct{}{}, &struct{}{}, true, []byte{1, 2, 3})
 
-	assert.Equal(t, `Unexpected call Bar(1, "2", {}, &{}, true, [1 2 3])`, tester.errStr)
+	assert.Equal(t, `Unexpected call to Bar(). If function call is expected add ".WHEN.Bar()" to mock.`, tester.errStr)
 }
 
 func TestAnyTimes(t *testing.T) {

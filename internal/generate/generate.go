@@ -177,7 +177,7 @@ func NewMock%s%s(t interface {
 	w.EndIdent()
 	w.P("}")
 	w.P("_this.t.Helper()")
-	w.P("_this.t.Fatalf(`Unexpected call %%s(%%s)`, method, argsStr)")
+	w.P("_this.t.Fatalf(`Unexpected call to %%s(). If function call is expected add \".WHEN.%%s()\" to mock.`, method, method)")
 	w.EndIdent()
 	w.P("}")
 	w.P("")

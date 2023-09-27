@@ -93,7 +93,7 @@ func (_this *mockInheritOwn) unexpectedCall(method string, args ...any) {
 		}
 	}
 	_this.t.Helper()
-	_this.t.Fatalf(`Unexpected call %s(%s)`, method, argsStr)
+	_this.t.Fatalf(`Unexpected call to %s(). If function call is expected add ".WHEN.%s()" to mock.`, method, method)
 }
 
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
