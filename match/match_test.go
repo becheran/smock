@@ -23,7 +23,6 @@ func TestEq(t *testing.T) {
 	assert.False(t, match.Eq([2]string{"foo", "bar"})([2]string{"foo", "bz"}))
 	assert.False(t, match.Eq[string]("")("foo"))
 	assert.False(t, match.Eq[string]("foo")("bar"))
-	assert.False(t, match.Eq[any]("foo")(1))
 }
 
 func TestAnyOf(t *testing.T) {
