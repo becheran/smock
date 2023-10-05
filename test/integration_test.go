@@ -45,7 +45,7 @@ func BenchmarkGenerate(b *testing.B) {
 func TestSmockGenerateFunc(t *testing.T) {
 	os.RemoveAll("./test_package/testpackage_mock")
 
-	files := smock.GenerateMocks()
+	files := smock.GenerateMocks(smock.WithUnexportedInterfaces())
 
 	for _, i := range files {
 		source, err := os.Open(i)
