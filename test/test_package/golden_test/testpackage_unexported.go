@@ -14,9 +14,9 @@ func NewMockunexported(t interface {
 	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
-}) *mockunexported {
+}) *Mockunexported {
 	t.Helper()
-	m := &mockunexported{t: t}
+	m := &Mockunexported{t: t}
 	t.Cleanup(func () {
 		errStr := ""
 		for _, v := range m.vFoo {
@@ -32,7 +32,7 @@ func NewMockunexported(t interface {
 	return m
 }
 
-type mockunexported struct {
+type Mockunexported struct {
 	t interface {
 		Fatalf(format string, args ...any)
 		Helper()
@@ -41,7 +41,7 @@ type mockunexported struct {
 	vFoo []*struct{fun func(); validateArgs func() bool; expectedCalled int; called int}
 }
 
-func (_this *mockunexported) Foo() {
+func (_this *Mockunexported) Foo() {
 	for _, _check := range _this.vFoo {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			_check.called++
@@ -53,7 +53,7 @@ func (_this *mockunexported) Foo() {
 	_this.unexpectedCall("Foo", )
 }
 
-func (_this *mockunexported) unexpectedCall(method string, args ...any) {
+func (_this *Mockunexported) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
 		switch t := reflect.TypeOf(arg); {
@@ -74,21 +74,21 @@ func (_this *mockunexported) unexpectedCall(method string, args ...any) {
 
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
 // Use this to setup your mock for your specific test scenario.
-func (_this *mockunexported) WHEN() *mockunexportedWhen {
-	return &mockunexportedWhen{
+func (_this *Mockunexported) WHEN() *MockunexportedWhen {
+	return &MockunexportedWhen{
 		m: _this,
 	}
 }
 
-type mockunexportedWhen struct {
-	m *mockunexported
+type MockunexportedWhen struct {
+	m *Mockunexported
 }
 
 // Defines the behavior when Foo of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockunexportedWhen) Foo() *mockunexportedFooWhen {
+func (_this *MockunexportedWhen) Foo() *MockunexportedFooWhen {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -104,21 +104,21 @@ func (_this *mockunexportedWhen) Foo() *mockunexportedFooWhen {
 	validator.fun = func() {}
 	validator.expectedCalled = -1
 	_this.m.vFoo = append(_this.m.vFoo, &validator)
-	return &mockunexportedFooWhen{fun: &validator.fun, mockunexportedTimes: &mockunexportedTimes{expectedCalled: &validator.expectedCalled}} 
+	return &MockunexportedFooWhen{fun: &validator.fun, MockunexportedTimes: &MockunexportedTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type mockunexportedFooWhen struct {
-	*mockunexportedTimes
+type MockunexportedFooWhen struct {
+	*MockunexportedTimes
 	fun *func()
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockunexportedFooWhen) Do(do func()) *mockunexportedTimes {
+func (_this *MockunexportedFooWhen) Do(do func()) *MockunexportedTimes {
 	*_this.fun = do
-	return _this.mockunexportedTimes
+	return _this.MockunexportedTimes
 }
 
-type mockunexportedTimes struct {
+type MockunexportedTimes struct {
 	expectedCalled *int
 }
 
@@ -126,21 +126,21 @@ type mockunexportedTimes struct {
 // Test will fail if the number of calls do not match with the expected calls value.
 //
 // A number < 0 means that a function may be called any times which is also the default behavior.
-func (_this *mockunexportedTimes) Times(times int) {
+func (_this *MockunexportedTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
 // AnyTimes disables the check how often a function was called.
-func (_this *mockunexportedTimes) AnyTimes() {
+func (_this *MockunexportedTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
 // Never will fail if the function is ever called. Is the same as Times(0).
-func (_this *mockunexportedTimes) Never() {
+func (_this *MockunexportedTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
 // Once will fail if the function is not called once. Is the same as Times(1).
-func (_this *mockunexportedTimes) Once() {
+func (_this *MockunexportedTimes) Once() {
 	*_this.expectedCalled = 1
 }

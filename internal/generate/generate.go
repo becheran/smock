@@ -21,7 +21,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	hasTypes := len(res.Types) > 0
 	assertImplements := !(hasTypes || !token.IsExported(res.Name))
 
-	mockedStructName := fmt.Sprintf("%s%s", "mock", res.Name)
+	mockedStructName := fmt.Sprintf("Mock%s", res.Name)
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
 	whenStructName := mockedStructName + "When"
 	whenStructNameWithTypeIdentifier := fmt.Sprintf("%s%s", whenStructName, res.Types.ListIdentifier())

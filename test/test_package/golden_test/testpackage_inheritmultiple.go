@@ -11,8 +11,8 @@ import (
 	testpackage "github.com/test/testpackage"
 )
 
-// mockInheritMultiple must implement interface testpackage.InheritMultiple
-var _ testpackage.InheritMultiple = &mockInheritMultiple{}
+// MockInheritMultiple must implement interface testpackage.InheritMultiple
+var _ testpackage.InheritMultiple = &MockInheritMultiple{}
 
 // NewMockInheritMultiple creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
@@ -20,9 +20,9 @@ func NewMockInheritMultiple(t interface {
 	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
-}) *mockInheritMultiple {
+}) *MockInheritMultiple {
 	t.Helper()
-	m := &mockInheritMultiple{t: t}
+	m := &MockInheritMultiple{t: t}
 	t.Cleanup(func () {
 		errStr := ""
 		for _, v := range m.vOwn {
@@ -63,7 +63,7 @@ func NewMockInheritMultiple(t interface {
 	return m
 }
 
-type mockInheritMultiple struct {
+type MockInheritMultiple struct {
 	t interface {
 		Fatalf(format string, args ...any)
 		Helper()
@@ -77,7 +77,7 @@ type mockInheritMultiple struct {
 	vSeek []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); validateArgs func(offset int64, whence int) bool; expectedCalled int; called int}
 }
 
-func (_this *mockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
+func (_this *MockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
 	for _, _check := range _this.vOwn {
 		if _check.validateArgs == nil || _check.validateArgs(i0, i1) {
 			_check.called++
@@ -89,7 +89,7 @@ func (_this *mockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
 	return
 }
 
-func (_this *mockInheritMultiple) RetType() (r0 testpackage.MyType) {
+func (_this *MockInheritMultiple) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			_check.called++
@@ -101,7 +101,7 @@ func (_this *mockInheritMultiple) RetType() (r0 testpackage.MyType) {
 	return
 }
 
-func (_this *mockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
+func (_this *MockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
 			_check.called++
@@ -113,7 +113,7 @@ func (_this *mockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	return
 }
 
-func (_this *mockInheritMultiple) Close() (r0 error) {
+func (_this *MockInheritMultiple) Close() (r0 error) {
 	for _, _check := range _this.vClose {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			_check.called++
@@ -125,7 +125,7 @@ func (_this *mockInheritMultiple) Close() (r0 error) {
 	return
 }
 
-func (_this *mockInheritMultiple) Read(p []byte) (n int, err error) {
+func (_this *MockInheritMultiple) Read(p []byte) (n int, err error) {
 	for _, _check := range _this.vRead {
 		if _check.validateArgs == nil || _check.validateArgs(p) {
 			_check.called++
@@ -137,7 +137,7 @@ func (_this *mockInheritMultiple) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (_this *mockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 error) {
+func (_this *MockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 error) {
 	for _, _check := range _this.vSeek {
 		if _check.validateArgs == nil || _check.validateArgs(offset, whence) {
 			_check.called++
@@ -149,7 +149,7 @@ func (_this *mockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 e
 	return
 }
 
-func (_this *mockInheritMultiple) unexpectedCall(method string, args ...any) {
+func (_this *MockInheritMultiple) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
 		switch t := reflect.TypeOf(arg); {
@@ -170,21 +170,21 @@ func (_this *mockInheritMultiple) unexpectedCall(method string, args ...any) {
 
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
 // Use this to setup your mock for your specific test scenario.
-func (_this *mockInheritMultiple) WHEN() *mockInheritMultipleWhen {
-	return &mockInheritMultipleWhen{
+func (_this *MockInheritMultiple) WHEN() *MockInheritMultipleWhen {
+	return &MockInheritMultipleWhen{
 		m: _this,
 	}
 }
 
-type mockInheritMultipleWhen struct {
-	m *mockInheritMultiple
+type MockInheritMultipleWhen struct {
+	m *MockInheritMultiple
 }
 
 // Defines the behavior when Own of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) Own() *mockInheritMultipleOwnExpect {
+func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpect {
 	for _, f := range _this.m.vOwn {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -200,14 +200,14 @@ func (_this *mockInheritMultipleWhen) Own() *mockInheritMultipleOwnExpect {
 	validator.fun = func(i0 int, i1 string) (r0 int, r1 string) { return }
 	validator.expectedCalled = -1
 	_this.m.vOwn = append(_this.m.vOwn, &validator)
-	return &mockInheritMultipleOwnExpect {
-		mockInheritMultipleOwnWhen: &mockInheritMultipleOwnWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritMultipleOwnExpect {
+		MockInheritMultipleOwnWhen: &MockInheritMultipleOwnWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritMultipleOwnExpect struct {
-	*mockInheritMultipleOwnWhen
+type MockInheritMultipleOwnExpect struct {
+	*MockInheritMultipleOwnWhen
 	validateArgs *func(i0 int, i1 string) bool
 }
 
@@ -215,37 +215,37 @@ type mockInheritMultipleOwnExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritMultipleOwnExpect) Expect(_0 func(int) bool, _1 func(string) bool) *mockInheritMultipleOwnWhen {
+func (_this *MockInheritMultipleOwnExpect) Expect(_0 func(int) bool, _1 func(string) bool) *MockInheritMultipleOwnWhen {
 	if !(_0 == nil && _1 == nil) {
 		*_this.validateArgs = func(_i0 int, _i1 string) bool {
 			return (_0 == nil || _0(_i0)) && (_1 == nil || _1(_i1))
 		}
 	}
-	return _this.mockInheritMultipleOwnWhen
+	return _this.MockInheritMultipleOwnWhen
 }
 
-type mockInheritMultipleOwnWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleOwnWhen struct {
+	*MockInheritMultipleTimes
 	fun *func(i0 int, i1 string) (r0 int, r1 string)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleOwnWhen) Return(r0 int, r1 string) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleOwnWhen) Return(r0 int, r1 string) *MockInheritMultipleTimes {
 	*_this.fun = func(int, string) (int, string) { return r0, r1 }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleOwnWhen) Do(do func(i0 int, i1 string) (r0 int, r1 string)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleOwnWhen) Do(do func(i0 int, i1 string) (r0 int, r1 string)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Defines the behavior when RetType of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) RetType() *mockInheritMultipleRetTypeWhen {
+func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhen {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -261,31 +261,31 @@ func (_this *mockInheritMultipleWhen) RetType() *mockInheritMultipleRetTypeWhen 
 	validator.fun = func() (r0 testpackage.MyType) { return }
 	validator.expectedCalled = -1
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
-	return &mockInheritMultipleRetTypeWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}} 
+	return &MockInheritMultipleRetTypeWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type mockInheritMultipleRetTypeWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleRetTypeWhen struct {
+	*MockInheritMultipleTimes
 	fun *func() (r0 testpackage.MyType)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleRetTypeWhen) Return(r0 testpackage.MyType) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleRetTypeWhen) Return(r0 testpackage.MyType) *MockInheritMultipleTimes {
 	*_this.fun = func() (testpackage.MyType) { return r0 }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Defines the behavior when UseStdType of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) UseStdType() *mockInheritMultipleUseStdTypeExpect {
+func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTypeExpect {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -301,14 +301,14 @@ func (_this *mockInheritMultipleWhen) UseStdType() *mockInheritMultipleUseStdTyp
 	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
 	validator.expectedCalled = -1
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
-	return &mockInheritMultipleUseStdTypeExpect {
-		mockInheritMultipleUseStdTypeWhen: &mockInheritMultipleUseStdTypeWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritMultipleUseStdTypeExpect {
+		MockInheritMultipleUseStdTypeWhen: &MockInheritMultipleUseStdTypeWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritMultipleUseStdTypeExpect struct {
-	*mockInheritMultipleUseStdTypeWhen
+type MockInheritMultipleUseStdTypeExpect struct {
+	*MockInheritMultipleUseStdTypeWhen
 	validateArgs *func(fi os.FileInfo) bool
 }
 
@@ -316,37 +316,37 @@ type mockInheritMultipleUseStdTypeExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritMultipleUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *mockInheritMultipleUseStdTypeWhen {
+func (_this *MockInheritMultipleUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *MockInheritMultipleUseStdTypeWhen {
 	if !(fi == nil) {
 		*_this.validateArgs = func(_fi os.FileInfo) bool {
 			return (fi == nil || fi(_fi))
 		}
 	}
-	return _this.mockInheritMultipleUseStdTypeWhen
+	return _this.MockInheritMultipleUseStdTypeWhen
 }
 
-type mockInheritMultipleUseStdTypeWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleUseStdTypeWhen struct {
+	*MockInheritMultipleTimes
 	fun *func(fi os.FileInfo) (r0 io.Reader)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleUseStdTypeWhen) Return(r0 io.Reader) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleUseStdTypeWhen) Return(r0 io.Reader) *MockInheritMultipleTimes {
 	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Defines the behavior when Close of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) Close() *mockInheritMultipleCloseWhen {
+func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhen {
 	for _, f := range _this.m.vClose {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -362,31 +362,31 @@ func (_this *mockInheritMultipleWhen) Close() *mockInheritMultipleCloseWhen {
 	validator.fun = func() (r0 error) { return }
 	validator.expectedCalled = -1
 	_this.m.vClose = append(_this.m.vClose, &validator)
-	return &mockInheritMultipleCloseWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}} 
+	return &MockInheritMultipleCloseWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type mockInheritMultipleCloseWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleCloseWhen struct {
+	*MockInheritMultipleTimes
 	fun *func() (r0 error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleCloseWhen) Return(r0 error) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleCloseWhen) Return(r0 error) *MockInheritMultipleTimes {
 	*_this.fun = func() (error) { return r0 }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleCloseWhen) Do(do func() (r0 error)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleCloseWhen) Do(do func() (r0 error)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Defines the behavior when Read of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) Read() *mockInheritMultipleReadExpect {
+func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpect {
 	for _, f := range _this.m.vRead {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -402,14 +402,14 @@ func (_this *mockInheritMultipleWhen) Read() *mockInheritMultipleReadExpect {
 	validator.fun = func(p []byte) (n int, err error) { return }
 	validator.expectedCalled = -1
 	_this.m.vRead = append(_this.m.vRead, &validator)
-	return &mockInheritMultipleReadExpect {
-		mockInheritMultipleReadWhen: &mockInheritMultipleReadWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritMultipleReadExpect {
+		MockInheritMultipleReadWhen: &MockInheritMultipleReadWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritMultipleReadExpect struct {
-	*mockInheritMultipleReadWhen
+type MockInheritMultipleReadExpect struct {
+	*MockInheritMultipleReadWhen
 	validateArgs *func(p []byte) bool
 }
 
@@ -417,37 +417,37 @@ type mockInheritMultipleReadExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritMultipleReadExpect) Expect(p func([]byte) bool) *mockInheritMultipleReadWhen {
+func (_this *MockInheritMultipleReadExpect) Expect(p func([]byte) bool) *MockInheritMultipleReadWhen {
 	if !(p == nil) {
 		*_this.validateArgs = func(_p []byte) bool {
 			return (p == nil || p(_p))
 		}
 	}
-	return _this.mockInheritMultipleReadWhen
+	return _this.MockInheritMultipleReadWhen
 }
 
-type mockInheritMultipleReadWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleReadWhen struct {
+	*MockInheritMultipleTimes
 	fun *func(p []byte) (n int, err error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleReadWhen) Return(n int, err error) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleReadWhen) Return(n int, err error) *MockInheritMultipleTimes {
 	*_this.fun = func([]byte) (int, error) { return n, err }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleReadWhen) Do(do func(p []byte) (n int, err error)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleReadWhen) Do(do func(p []byte) (n int, err error)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Defines the behavior when Seek of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritMultipleWhen) Seek() *mockInheritMultipleSeekExpect {
+func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpect {
 	for _, f := range _this.m.vSeek {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -463,14 +463,14 @@ func (_this *mockInheritMultipleWhen) Seek() *mockInheritMultipleSeekExpect {
 	validator.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 	validator.expectedCalled = -1
 	_this.m.vSeek = append(_this.m.vSeek, &validator)
-	return &mockInheritMultipleSeekExpect {
-		mockInheritMultipleSeekWhen: &mockInheritMultipleSeekWhen{fun: &validator.fun, mockInheritMultipleTimes: &mockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritMultipleSeekExpect {
+		MockInheritMultipleSeekWhen: &MockInheritMultipleSeekWhen{fun: &validator.fun, MockInheritMultipleTimes: &MockInheritMultipleTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritMultipleSeekExpect struct {
-	*mockInheritMultipleSeekWhen
+type MockInheritMultipleSeekExpect struct {
+	*MockInheritMultipleSeekWhen
 	validateArgs *func(offset int64, whence int) bool
 }
 
@@ -478,33 +478,33 @@ type mockInheritMultipleSeekExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritMultipleSeekExpect) Expect(offset func(int64) bool, whence func(int) bool) *mockInheritMultipleSeekWhen {
+func (_this *MockInheritMultipleSeekExpect) Expect(offset func(int64) bool, whence func(int) bool) *MockInheritMultipleSeekWhen {
 	if !(offset == nil && whence == nil) {
 		*_this.validateArgs = func(_offset int64, _whence int) bool {
 			return (offset == nil || offset(_offset)) && (whence == nil || whence(_whence))
 		}
 	}
-	return _this.mockInheritMultipleSeekWhen
+	return _this.MockInheritMultipleSeekWhen
 }
 
-type mockInheritMultipleSeekWhen struct {
-	*mockInheritMultipleTimes
+type MockInheritMultipleSeekWhen struct {
+	*MockInheritMultipleTimes
 	fun *func(offset int64, whence int) (r0 int64, r1 error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritMultipleSeekWhen) Return(r0 int64, r1 error) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleSeekWhen) Return(r0 int64, r1 error) *MockInheritMultipleTimes {
 	*_this.fun = func(int64, int) (int64, error) { return r0, r1 }
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritMultipleSeekWhen) Do(do func(offset int64, whence int) (r0 int64, r1 error)) *mockInheritMultipleTimes {
+func (_this *MockInheritMultipleSeekWhen) Do(do func(offset int64, whence int) (r0 int64, r1 error)) *MockInheritMultipleTimes {
 	*_this.fun = do
-	return _this.mockInheritMultipleTimes
+	return _this.MockInheritMultipleTimes
 }
 
-type mockInheritMultipleTimes struct {
+type MockInheritMultipleTimes struct {
 	expectedCalled *int
 }
 
@@ -512,21 +512,21 @@ type mockInheritMultipleTimes struct {
 // Test will fail if the number of calls do not match with the expected calls value.
 //
 // A number < 0 means that a function may be called any times which is also the default behavior.
-func (_this *mockInheritMultipleTimes) Times(times int) {
+func (_this *MockInheritMultipleTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
 // AnyTimes disables the check how often a function was called.
-func (_this *mockInheritMultipleTimes) AnyTimes() {
+func (_this *MockInheritMultipleTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
 // Never will fail if the function is ever called. Is the same as Times(0).
-func (_this *mockInheritMultipleTimes) Never() {
+func (_this *MockInheritMultipleTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
 // Once will fail if the function is not called once. Is the same as Times(1).
-func (_this *mockInheritMultipleTimes) Once() {
+func (_this *MockInheritMultipleTimes) Once() {
 	*_this.expectedCalled = 1
 }

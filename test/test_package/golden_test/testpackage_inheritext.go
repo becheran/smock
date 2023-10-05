@@ -9,8 +9,8 @@ import (
 	testpackage "github.com/test/testpackage"
 )
 
-// mockInheritExt must implement interface testpackage.InheritExt
-var _ testpackage.InheritExt = &mockInheritExt{}
+// MockInheritExt must implement interface testpackage.InheritExt
+var _ testpackage.InheritExt = &MockInheritExt{}
 
 // NewMockInheritExt creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
@@ -18,9 +18,9 @@ func NewMockInheritExt(t interface {
 	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
-}) *mockInheritExt {
+}) *MockInheritExt {
 	t.Helper()
-	m := &mockInheritExt{t: t}
+	m := &MockInheritExt{t: t}
 	t.Cleanup(func () {
 		errStr := ""
 		for _, v := range m.vClose {
@@ -46,7 +46,7 @@ func NewMockInheritExt(t interface {
 	return m
 }
 
-type mockInheritExt struct {
+type MockInheritExt struct {
 	t interface {
 		Fatalf(format string, args ...any)
 		Helper()
@@ -57,7 +57,7 @@ type mockInheritExt struct {
 	vSeek []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); validateArgs func(offset int64, whence int) bool; expectedCalled int; called int}
 }
 
-func (_this *mockInheritExt) Close() (r0 error) {
+func (_this *MockInheritExt) Close() (r0 error) {
 	for _, _check := range _this.vClose {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			_check.called++
@@ -69,7 +69,7 @@ func (_this *mockInheritExt) Close() (r0 error) {
 	return
 }
 
-func (_this *mockInheritExt) Read(p []byte) (n int, err error) {
+func (_this *MockInheritExt) Read(p []byte) (n int, err error) {
 	for _, _check := range _this.vRead {
 		if _check.validateArgs == nil || _check.validateArgs(p) {
 			_check.called++
@@ -81,7 +81,7 @@ func (_this *mockInheritExt) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (_this *mockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error) {
+func (_this *MockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error) {
 	for _, _check := range _this.vSeek {
 		if _check.validateArgs == nil || _check.validateArgs(offset, whence) {
 			_check.called++
@@ -93,7 +93,7 @@ func (_this *mockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error)
 	return
 }
 
-func (_this *mockInheritExt) unexpectedCall(method string, args ...any) {
+func (_this *MockInheritExt) unexpectedCall(method string, args ...any) {
 	argsStr := ""
 	for idx, arg := range args {
 		switch t := reflect.TypeOf(arg); {
@@ -114,21 +114,21 @@ func (_this *mockInheritExt) unexpectedCall(method string, args ...any) {
 
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
 // Use this to setup your mock for your specific test scenario.
-func (_this *mockInheritExt) WHEN() *mockInheritExtWhen {
-	return &mockInheritExtWhen{
+func (_this *MockInheritExt) WHEN() *MockInheritExtWhen {
+	return &MockInheritExtWhen{
 		m: _this,
 	}
 }
 
-type mockInheritExtWhen struct {
-	m *mockInheritExt
+type MockInheritExtWhen struct {
+	m *MockInheritExt
 }
 
 // Defines the behavior when Close of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritExtWhen) Close() *mockInheritExtCloseWhen {
+func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhen {
 	for _, f := range _this.m.vClose {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -144,31 +144,31 @@ func (_this *mockInheritExtWhen) Close() *mockInheritExtCloseWhen {
 	validator.fun = func() (r0 error) { return }
 	validator.expectedCalled = -1
 	_this.m.vClose = append(_this.m.vClose, &validator)
-	return &mockInheritExtCloseWhen{fun: &validator.fun, mockInheritExtTimes: &mockInheritExtTimes{expectedCalled: &validator.expectedCalled}} 
+	return &MockInheritExtCloseWhen{fun: &validator.fun, MockInheritExtTimes: &MockInheritExtTimes{expectedCalled: &validator.expectedCalled}} 
 }
 
-type mockInheritExtCloseWhen struct {
-	*mockInheritExtTimes
+type MockInheritExtCloseWhen struct {
+	*MockInheritExtTimes
 	fun *func() (r0 error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritExtCloseWhen) Return(r0 error) *mockInheritExtTimes {
+func (_this *MockInheritExtCloseWhen) Return(r0 error) *MockInheritExtTimes {
 	*_this.fun = func() (error) { return r0 }
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritExtCloseWhen) Do(do func() (r0 error)) *mockInheritExtTimes {
+func (_this *MockInheritExtCloseWhen) Do(do func() (r0 error)) *MockInheritExtTimes {
 	*_this.fun = do
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
 // Defines the behavior when Read of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritExtWhen) Read() *mockInheritExtReadExpect {
+func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpect {
 	for _, f := range _this.m.vRead {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -184,14 +184,14 @@ func (_this *mockInheritExtWhen) Read() *mockInheritExtReadExpect {
 	validator.fun = func(p []byte) (n int, err error) { return }
 	validator.expectedCalled = -1
 	_this.m.vRead = append(_this.m.vRead, &validator)
-	return &mockInheritExtReadExpect {
-		mockInheritExtReadWhen: &mockInheritExtReadWhen{fun: &validator.fun, mockInheritExtTimes: &mockInheritExtTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritExtReadExpect {
+		MockInheritExtReadWhen: &MockInheritExtReadWhen{fun: &validator.fun, MockInheritExtTimes: &MockInheritExtTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritExtReadExpect struct {
-	*mockInheritExtReadWhen
+type MockInheritExtReadExpect struct {
+	*MockInheritExtReadWhen
 	validateArgs *func(p []byte) bool
 }
 
@@ -199,37 +199,37 @@ type mockInheritExtReadExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritExtReadExpect) Expect(p func([]byte) bool) *mockInheritExtReadWhen {
+func (_this *MockInheritExtReadExpect) Expect(p func([]byte) bool) *MockInheritExtReadWhen {
 	if !(p == nil) {
 		*_this.validateArgs = func(_p []byte) bool {
 			return (p == nil || p(_p))
 		}
 	}
-	return _this.mockInheritExtReadWhen
+	return _this.MockInheritExtReadWhen
 }
 
-type mockInheritExtReadWhen struct {
-	*mockInheritExtTimes
+type MockInheritExtReadWhen struct {
+	*MockInheritExtTimes
 	fun *func(p []byte) (n int, err error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritExtReadWhen) Return(n int, err error) *mockInheritExtTimes {
+func (_this *MockInheritExtReadWhen) Return(n int, err error) *MockInheritExtTimes {
 	*_this.fun = func([]byte) (int, error) { return n, err }
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritExtReadWhen) Do(do func(p []byte) (n int, err error)) *mockInheritExtTimes {
+func (_this *MockInheritExtReadWhen) Do(do func(p []byte) (n int, err error)) *MockInheritExtTimes {
 	*_this.fun = do
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
 // Defines the behavior when Seek of the mock is called.
 //
 // As a default the method can be called any times.
 // To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *mockInheritExtWhen) Seek() *mockInheritExtSeekExpect {
+func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpect {
 	for _, f := range _this.m.vSeek {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
@@ -245,14 +245,14 @@ func (_this *mockInheritExtWhen) Seek() *mockInheritExtSeekExpect {
 	validator.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 	validator.expectedCalled = -1
 	_this.m.vSeek = append(_this.m.vSeek, &validator)
-	return &mockInheritExtSeekExpect {
-		mockInheritExtSeekWhen: &mockInheritExtSeekWhen{fun: &validator.fun, mockInheritExtTimes: &mockInheritExtTimes{expectedCalled: &validator.expectedCalled}},
+	return &MockInheritExtSeekExpect {
+		MockInheritExtSeekWhen: &MockInheritExtSeekWhen{fun: &validator.fun, MockInheritExtTimes: &MockInheritExtTimes{expectedCalled: &validator.expectedCalled}},
 		validateArgs: &validator.validateArgs,
 	}
 }
 
-type mockInheritExtSeekExpect struct {
-	*mockInheritExtSeekWhen
+type MockInheritExtSeekExpect struct {
+	*MockInheritExtSeekWhen
 	validateArgs *func(offset int64, whence int) bool
 }
 
@@ -260,33 +260,33 @@ type mockInheritExtSeekExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockInheritExtSeekExpect) Expect(offset func(int64) bool, whence func(int) bool) *mockInheritExtSeekWhen {
+func (_this *MockInheritExtSeekExpect) Expect(offset func(int64) bool, whence func(int) bool) *MockInheritExtSeekWhen {
 	if !(offset == nil && whence == nil) {
 		*_this.validateArgs = func(_offset int64, _whence int) bool {
 			return (offset == nil || offset(_offset)) && (whence == nil || whence(_whence))
 		}
 	}
-	return _this.mockInheritExtSeekWhen
+	return _this.MockInheritExtSeekWhen
 }
 
-type mockInheritExtSeekWhen struct {
-	*mockInheritExtTimes
+type MockInheritExtSeekWhen struct {
+	*MockInheritExtTimes
 	fun *func(offset int64, whence int) (r0 int64, r1 error)
 }
 
 // Return the provided values when called
-func (_this *mockInheritExtSeekWhen) Return(r0 int64, r1 error) *mockInheritExtTimes {
+func (_this *MockInheritExtSeekWhen) Return(r0 int64, r1 error) *MockInheritExtTimes {
 	*_this.fun = func(int64, int) (int64, error) { return r0, r1 }
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockInheritExtSeekWhen) Do(do func(offset int64, whence int) (r0 int64, r1 error)) *mockInheritExtTimes {
+func (_this *MockInheritExtSeekWhen) Do(do func(offset int64, whence int) (r0 int64, r1 error)) *MockInheritExtTimes {
 	*_this.fun = do
-	return _this.mockInheritExtTimes
+	return _this.MockInheritExtTimes
 }
 
-type mockInheritExtTimes struct {
+type MockInheritExtTimes struct {
 	expectedCalled *int
 }
 
@@ -294,21 +294,21 @@ type mockInheritExtTimes struct {
 // Test will fail if the number of calls do not match with the expected calls value.
 //
 // A number < 0 means that a function may be called any times which is also the default behavior.
-func (_this *mockInheritExtTimes) Times(times int) {
+func (_this *MockInheritExtTimes) Times(times int) {
 	*_this.expectedCalled = times
 }
 
 // AnyTimes disables the check how often a function was called.
-func (_this *mockInheritExtTimes) AnyTimes() {
+func (_this *MockInheritExtTimes) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
 // Never will fail if the function is ever called. Is the same as Times(0).
-func (_this *mockInheritExtTimes) Never() {
+func (_this *MockInheritExtTimes) Never() {
 	*_this.expectedCalled = 0
 }
 
 // Once will fail if the function is not called once. Is the same as Times(1).
-func (_this *mockInheritExtTimes) Once() {
+func (_this *MockInheritExtTimes) Once() {
 	*_this.expectedCalled = 1
 }
