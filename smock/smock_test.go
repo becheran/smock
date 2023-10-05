@@ -13,15 +13,20 @@ func TestGenerateMocks(t *testing.T) {
 
 func TestSkip(t *testing.T) {
 	// Deny list
-	assert.False(t, skip("f", []*wildmatch.WildMatch{}, false))
-	assert.False(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b")}, false))
-	assert.True(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("*")}, false))
-	assert.True(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b"), wildmatch.NewWildMatch("?")}, false))
-	assert.True(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("f")}, false))
+	assert.False(t, skip("F", []*wildmatch.WildMatch{}, false, true))
+	assert.False(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b")}, false, true))
+	assert.True(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("*")}, false, true))
+	assert.True(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b"), wildmatch.NewWildMatch("?")}, false, true))
+	assert.True(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("F")}, false, true))
 
 	// Allow list
-	assert.False(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b"), wildmatch.NewWildMatch("?")}, true))
-	assert.False(t, skip("f", []*wildmatch.WildMatch{wildmatch.NewWildMatch("f")}, true))
-	assert.True(t, skip("f", []*wildmatch.WildMatch{}, true))
-	assert.True(t, skip("f", []*wildmatch.WildMatch{}, true))
+	assert.False(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("b"), wildmatch.NewWildMatch("?")}, true, true))
+	assert.False(t, skip("F", []*wildmatch.WildMatch{wildmatch.NewWildMatch("F")}, true, true))
+	assert.True(t, skip("F", []*wildmatch.WildMatch{}, true, true))
+	assert.True(t, skip("F", []*wildmatch.WildMatch{}, true, true))
+
+	// Unexported
+	assert.True(t, skip("f", nil, false, false))
+	assert.False(t, skip("f", nil, false, true))
+	assert.False(t, skip("F", nil, false, true))
 }

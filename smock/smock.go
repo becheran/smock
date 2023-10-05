@@ -20,12 +20,16 @@ import (
 )
 
 type opt struct {
+	Unexported    bool
 	Debug         bool
 	InterfaceList []*wildmatch.WildMatch
 	IsAllowList   bool
 }
 
-func skip(name string, list []*wildmatch.WildMatch, isAllowList bool) (skip bool) {
+func skip(name string, list []*wildmatch.WildMatch, isAllowList, allowUnexported bool) (skip bool) {
+	if !token.IsExported(name) && !allowUnexported {
+		return true
+	}
 	skip = isAllowList
 	for _, m := range list {
 		if m.IsMatch(name) {
@@ -72,6 +76,13 @@ func WithInterfaceNameDenyList(deny ...string) Option {
 			o.InterfaceList = append(o.InterfaceList, wildmatch.NewWildMatch(d))
 		}
 		o.IsAllowList = false
+	}
+}
+
+// WithUnexportedInterfaces enables generation of unexported interfaces
+func WithUnexportedInterfaces() Option {
+	return func(o *opt) {
+		o.Unexported = true
 	}
 }
 
@@ -151,7 +162,7 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 						}
 
 						logger.Println("Found interface", i.Name)
-						if skip(i.Name, opt.InterfaceList, opt.IsAllowList) {
+						if skip(i.Name, opt.InterfaceList, opt.IsAllowList, opt.Unexported) {
 							logger.Println("Skip interface", i.Name)
 							continue
 						}

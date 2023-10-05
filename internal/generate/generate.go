@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"go/token"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -18,6 +19,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	}
 
 	hasTypes := len(res.Types) > 0
+	assertImplements := !(hasTypes || !token.IsExported(res.Name))
 
 	mockedStructName := fmt.Sprintf("%s%s", "mock", res.Name)
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
@@ -41,7 +43,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	fmtAlreadyImported := false
 	reflectAlreadyImported := false
 	for _, i := range res.Imports {
-		if hasTypes && i.ImportName() == res.PackageName {
+		if !assertImplements && i.ImportName() == res.PackageName {
 			continue
 		}
 		if i.ImportName() == "fmt" {
@@ -63,7 +65,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	})
 
 	for _, i := range res.Imports {
-		if hasTypes && i.ImportName() == res.PackageName {
+		if !assertImplements && i.ImportName() == res.PackageName {
 			continue
 		}
 		w.P("%s", i)
@@ -74,7 +76,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 
 	// Do not validate when generics are used.
 	// It is complicated to retrieve a valid type and assert that one concrete type implements the interface.
-	if !hasTypes {
+	if assertImplements {
 		w.P("// %s must implement interface %s.%s", mockedStructName, res.PackageName, res.Name)
 		w.P("var _ %s.%s = &%s{}", res.PackageName, res.Name, mockedStructName)
 		w.P("")
@@ -83,7 +85,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P(`// NewMock%s creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMock%s%s(t interface {
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
 }) *%s {`,

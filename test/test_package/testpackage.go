@@ -45,3 +45,8 @@ type WithLambda[T comparable] interface {
 	Bar(b ...struct{}) bool
 	Baz(b ...T) bool
 }
+
+//go:generate smock -debug
+type unexported interface {
+	Foo()
+}

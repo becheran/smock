@@ -32,8 +32,8 @@ type MyInterface interface {
 	src2 = `package p
 
 import (
-	"github.com/foo/bar/other"
 	"golang.org/x/exp/constraints"
+	"github.com/foo/bar/other"
 )
 
 type MyInterface other.Other
@@ -78,8 +78,8 @@ func TestParseInterface(t *testing.T) {
 				{Name: "Void", Params: nil, Results: nil},
 			},
 			Imports: []model.Import{
-				{Path: "io"},
 				{Name: "other", Path: "github.com/foo/bar"},
+				{Path: "io"},
 			}}},
 
 		{src2, 8, "", model.InterfaceResult{
