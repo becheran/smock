@@ -8,6 +8,11 @@ package match
 // Match is a simple expression which evaluates to be either 'true' or 'false'
 type Match[T any] func(e T) bool
 
+// Any is the verbose version of 'nil' and will always evaluate to true when passed as expression
+func Any[T any]() Match[T] {
+	return func(T) bool { return true }
+}
+
 // And combines two expressions with a logical AND `&&`
 func (m Match[T]) And(o Match[T]) Match[T] {
 	if o == nil {

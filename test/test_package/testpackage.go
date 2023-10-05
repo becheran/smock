@@ -9,7 +9,7 @@ import (
 type Simple interface {
 	Foo()
 	SingleArg(int)
-	Bar(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) string
+	Bar(a int, b string, c struct{}, d *struct{}, e any, f []byte) string
 	Baz(a int, b string) (s string)
 	Fun(a, b func(a, b func(o, i string) (f, a int))) (r, r2 func())
 }

@@ -133,7 +133,7 @@ type Tester struct {
 	cleanup func()
 }
 
-func (t *Tester) Fatalf(format string, args ...interface{}) {
+func (t *Tester) Fatalf(format string, args ...any) {
 	t.errStr = fmt.Sprintf(format, args...)
 }
 

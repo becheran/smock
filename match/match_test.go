@@ -35,6 +35,7 @@ func TestOr(t *testing.T) {
 	assert.True(t, match.Eq("foo").Or(match.Eq("bar"))("bar"))
 	assert.False(t, match.Eq("foo").Or(match.Eq("bar"))("other"))
 }
+
 func TestNot(t *testing.T) {
 	assert.False(t, match.Not(match.Eq("foo"))("foo"))
 	assert.True(t, match.Not(match.Eq("foo"))("bar"))
@@ -57,6 +58,12 @@ func TestMapEq(t *testing.T) {
 	assert.False(t, match.MapEq(map[int]int{0: 1})(map[int]int{1: 1}))
 	assert.False(t, match.MapEq(map[int]int{0: 1})(map[int]int{1: 1, 0: 1}))
 	assert.True(t, match.MapEq(map[int]int{0: 1})(map[int]int{0: 1}))
+}
+
+func TestAny(t *testing.T) {
+	assert.True(t, match.Any[string]()(""))
+	assert.True(t, match.Any[any]()(nil))
+	assert.True(t, match.Any[any]()("bar"))
 }
 
 func Example() {

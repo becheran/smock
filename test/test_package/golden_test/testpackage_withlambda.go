@@ -4,14 +4,14 @@
 package testpackage_mock
 
 import (
-	"fmt"
-	"reflect"
+	fmt "fmt"
+	reflect "reflect"
 )
 
 // NewMockWithLambda creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockWithLambda[T comparable](t interface {
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
 }) *mockWithLambda[T] {
@@ -44,7 +44,7 @@ func NewMockWithLambda[T comparable](t interface {
 
 type mockWithLambda[T comparable] struct {
 	t interface {
-		Fatalf(format string, args ...interface{})
+		Fatalf(format string, args ...any)
 		Helper()
 	}
 	

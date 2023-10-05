@@ -5,12 +5,13 @@ import (
 	"go/ast"
 	"go/token"
 	"path"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/becheran/smock/internal/logger"
 	"github.com/becheran/smock/internal/model"
 	"github.com/becheran/smock/internal/pathhelper"
-	"golang.org/x/exp/slices"
 )
 
 func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.InterfaceResult, err error) {
@@ -212,20 +213,28 @@ func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 		i.Imports = append(i.Imports, *foundImport)
 	}
 
-	slices.SortFunc(inheritInterfaces, func(a, b *model.InterfaceResult) bool { return a.Name < b.Name })
+	sort.SliceStable(inheritInterfaces, func(a, b int) bool {
+		return strings.Compare(inheritInterfaces[a].Name, inheritInterfaces[b].Name) < 0
+	})
+
 	for _, inheritInterface := range inheritInterfaces {
 		i.Methods = append(i.Methods, inheritInterface.Methods...)
 
 		for _, genImport := range inheritInterface.Imports {
-			if slices.ContainsFunc(i.Imports, func(a model.Import) bool { return a.ImportName() == genImport.ImportName() }) {
+			alreadyAdded := false
+			for _, a := range i.Imports {
+				if a.ImportName() == genImport.ImportName() {
+					alreadyAdded = true
+					break
+				}
+			}
+			if alreadyAdded {
 				logger.Printf("Import %s already added in original interface", genImport.ImportName())
 				continue
 			}
 			i.Imports = append(i.Imports, genImport)
 		}
 	}
-
-	slices.SortFunc(i.Imports, func(a, b model.Import) bool { return a.ImportName() < b.ImportName() })
 
 	return i, nil
 }

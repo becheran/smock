@@ -1,3 +1,4 @@
+// Package smock exposes methods to generate new mocks for interfaces in a go project.
 package smock
 
 import (

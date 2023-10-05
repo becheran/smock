@@ -4,9 +4,9 @@
 package testpackage_mock
 
 import (
+	fmt "fmt"
+	reflect "reflect"
 	testpackage "github.com/test/testpackage"
-	"fmt"
-	"reflect"
 )
 
 // mockSimple must implement interface testpackage.Simple
@@ -15,7 +15,7 @@ var _ testpackage.Simple = &mockSimple{}
 // NewMockSimple creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockSimple(t interface {
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
 }) *mockSimple {
@@ -58,13 +58,13 @@ func NewMockSimple(t interface {
 
 type mockSimple struct {
 	t interface {
-		Fatalf(format string, args ...interface{})
+		Fatalf(format string, args ...any)
 		Helper()
 	}
 	
 	vFoo []*struct{fun func(); validateArgs func() bool; expectedCalled int; called int}
 	vSingleArg []*struct{fun func(i0 int); validateArgs func(i0 int) bool; expectedCalled int; called int}
-	vBar []*struct{fun func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string); validateArgs func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) bool; expectedCalled int; called int}
+	vBar []*struct{fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string); validateArgs func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool; expectedCalled int; called int}
 	vBaz []*struct{fun func(a int, b string) (s string); validateArgs func(a int, b string) bool; expectedCalled int; called int}
 	vFun []*struct{fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()); validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool; expectedCalled int; called int}
 }
@@ -93,7 +93,7 @@ func (_this *mockSimple) SingleArg(i0 int) {
 	_this.unexpectedCall("SingleArg", i0)
 }
 
-func (_this *mockSimple) Bar(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string) {
+func (_this *mockSimple) Bar(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string) {
 	for _, _check := range _this.vBar {
 		if _check.validateArgs == nil || _check.validateArgs(a, b, c, d, e, f) {
 			_check.called++
@@ -261,12 +261,12 @@ func (_this *mockSimpleWhen) Bar() *mockSimpleBarExpect {
 		}
 	}
 	var validator struct {
-		fun func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string)
-		validateArgs func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) bool
+		fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
+		validateArgs func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string) { return }
+	validator.fun = func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string) { return }
 	validator.expectedCalled = -1
 	_this.m.vBar = append(_this.m.vBar, &validator)
 	return &mockSimpleBarExpect {
@@ -277,16 +277,16 @@ func (_this *mockSimpleWhen) Bar() *mockSimpleBarExpect {
 
 type mockSimpleBarExpect struct {
 	*mockSimpleBarWhen
-	validateArgs *func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) bool
+	validateArgs *func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool
 }
 
 // Expect will filter for given arguments.
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *mockSimpleBarExpect) Expect(a func(int) bool, b func(string) bool, c func(struct{}) bool, d func(*struct{}) bool, e func(interface{}) bool, f func([]byte) bool) *mockSimpleBarWhen {
+func (_this *mockSimpleBarExpect) Expect(a func(int) bool, b func(string) bool, c func(struct{}) bool, d func(*struct{}) bool, e func(any) bool, f func([]byte) bool) *mockSimpleBarWhen {
 	if !(a == nil && b == nil && c == nil && d == nil && e == nil && f == nil) {
-		*_this.validateArgs = func(_a int, _b string, _c struct{}, _d *struct{}, _e interface{}, _f []byte) bool {
+		*_this.validateArgs = func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool {
 			return (a == nil || a(_a)) && (b == nil || b(_b)) && (c == nil || c(_c)) && (d == nil || d(_d)) && (e == nil || e(_e)) && (f == nil || f(_f))
 		}
 	}
@@ -295,17 +295,17 @@ func (_this *mockSimpleBarExpect) Expect(a func(int) bool, b func(string) bool, 
 
 type mockSimpleBarWhen struct {
 	*mockSimpleTimes
-	fun *func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string)
+	fun *func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
 }
 
 // Return the provided values when called
 func (_this *mockSimpleBarWhen) Return(r0 string) *mockSimpleTimes {
-	*_this.fun = func(int, string, struct{}, *struct{}, interface{}, []byte) (string) { return r0 }
+	*_this.fun = func(int, string, struct{}, *struct{}, any, []byte) (string) { return r0 }
 	return _this.mockSimpleTimes
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *mockSimpleBarWhen) Do(do func(a int, b string, c struct{}, d *struct{}, e interface{}, f []byte) (r0 string)) *mockSimpleTimes {
+func (_this *mockSimpleBarWhen) Do(do func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)) *mockSimpleTimes {
 	*_this.fun = do
 	return _this.mockSimpleTimes
 }

@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"runtime/debug"
+	"sort"
 	"strings"
 
 	"github.com/becheran/smock/internal/logger"
@@ -49,13 +50,23 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if i.ImportName() == "reflect" {
 			reflectAlreadyImported = true
 		}
-		w.P("%s", i)
 	}
 	if !fmtAlreadyImported {
-		w.P(`"fmt"`)
+		res.Imports = append(res.Imports, model.Import{Path: "fmt"})
 	}
 	if !reflectAlreadyImported {
-		w.P(`"reflect"`)
+		res.Imports = append(res.Imports, model.Import{Path: "reflect"})
+	}
+
+	sort.SliceStable(res.Imports, func(a, b int) bool {
+		return strings.Compare(res.Imports[a].ImportName(), res.Imports[b].ImportName()) < 0
+	})
+
+	for _, i := range res.Imports {
+		if hasTypes && i.ImportName() == res.PackageName {
+			continue
+		}
+		w.P("%s", i)
 	}
 	w.EndIdent()
 	w.P(")")
@@ -111,7 +122,7 @@ func NewMock%s%s(t interface {
 	w.P("type %s%s struct {", mockedStructName, res.Types.ListTypesWithIdentifiers())
 	w.Ident()
 	w.P(`t interface {
-		Fatalf(format string, args ...interface{})
+		Fatalf(format string, args ...any)
 		Helper()
 	}`)
 	w.P("")

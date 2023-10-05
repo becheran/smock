@@ -4,11 +4,11 @@
 package testpackage_mock
 
 import (
+	fmt "fmt"
 	io "io"
 	os "os"
+	reflect "reflect"
 	testpackage "github.com/test/testpackage"
-	"fmt"
-	"reflect"
 )
 
 // mockInheritMultiple must implement interface testpackage.InheritMultiple
@@ -17,7 +17,7 @@ var _ testpackage.InheritMultiple = &mockInheritMultiple{}
 // NewMockInheritMultiple creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockInheritMultiple(t interface {
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 	Helper()
 	Cleanup(f func())
 }) *mockInheritMultiple {
@@ -65,7 +65,7 @@ func NewMockInheritMultiple(t interface {
 
 type mockInheritMultiple struct {
 	t interface {
-		Fatalf(format string, args ...interface{})
+		Fatalf(format string, args ...any)
 		Helper()
 	}
 	

@@ -3,7 +3,7 @@ module github.com/test/testpackage
 go 1.18
 
 require (
-	github.com/becheran/smock v0.0.0-20230927163458-39f3c48af310
+	github.com/becheran/smock v0.0.0-20230927194545-ca1665a4d530
 	github.com/stretchr/testify v1.8.4
 )
 
