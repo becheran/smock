@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/becheran/smock/internal/logger"
 	"github.com/becheran/smock/internal/pathhelper"
 )
 
@@ -20,6 +21,7 @@ type ModInfo struct {
 }
 
 func FindMod(startPath string) (info ModInfo, err error) {
+	logger.Printf("Search for module in '%s'", startPath)
 	fileInfo, err := os.Stat(startPath)
 	if err != nil {
 		return ModInfo{}, err
@@ -41,6 +43,7 @@ func FindMod(startPath string) (info ModInfo, err error) {
 }
 
 func OpenModFile(modFile string) (ModInfo, error) {
+	logger.Printf("Found mod file '%s'", modFile)
 	file, err := os.Open(modFile)
 	if err != nil {
 		return ModInfo{}, err

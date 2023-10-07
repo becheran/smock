@@ -144,7 +144,7 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 				return filepath.SkipDir
 			}
 
-			logger.Printf("Parse dir '%s'\n", filePath)
+			logger.Printf("Parse dir '%s'", filePath)
 			dir, err := parser.ParseDir(fset, filePath, nil, 0)
 			if err != nil {
 				log.Fatalf("Failed to parse dir '%s'. %s", filePath, err)

@@ -12,7 +12,7 @@ import (
 )
 
 func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
-	logger.Printf("Start generating mock")
+	logger.Printf("Start generating mock for %+v", res)
 
 	if err := res.ValidateReadyForGenerate(); err != nil {
 		return nil, err
@@ -38,8 +38,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("package %s%s", res.PackageName, model.MockPackageSuffix)
 	w.P("")
 
-	w.P("import (")
-	w.Ident()
 	fmtAlreadyImported := false
 	reflectAlreadyImported := false
 	for _, i := range res.Imports {
@@ -59,16 +57,18 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	if !reflectAlreadyImported {
 		res.Imports = append(res.Imports, model.Import{Path: "reflect"})
 	}
-
 	sort.SliceStable(res.Imports, func(a, b int) bool {
 		return strings.Compare(res.Imports[a].ImportName(), res.Imports[b].ImportName()) < 0
 	})
 
+	w.P("import (")
+	w.Ident()
 	for _, i := range res.Imports {
 		if !assertImplements && i.ImportName() == res.PackageName {
 			continue
 		}
 		w.P("%s", i)
+		logger.Printf("Use import: %s", i)
 	}
 	w.EndIdent()
 	w.P(")")

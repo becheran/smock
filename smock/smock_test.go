@@ -7,10 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateMocks(t *testing.T) {
-	GenerateMocks(WithDebugLog())
-}
-
 func TestSkip(t *testing.T) {
 	// Deny list
 	assert.False(t, skip("F", []*wildmatch.WildMatch{}, false, true))

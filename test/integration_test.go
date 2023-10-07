@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -23,11 +24,16 @@ const testGoldenFileDir = "golden_test"
 
 var generate = flag.Bool("generate", false, "generate golden files")
 
-func init() {
+func TestMain(m *testing.M) {
+	_, filename, _, _ := runtime.Caller(0)
+
 	logger.EnableLogger()
-	if err := os.Chdir(testPackagePath); err != nil {
+	if err := os.Chdir(path.Dir(filename) + testPackagePath); err != nil {
 		panic(err)
 	}
+
+	exitVal := m.Run()
+	os.Exit(exitVal)
 }
 
 // BenchmarkGenerate-12    	     178	   6704438 ns/op	 1758730 B/op	   39041 allocs/op
@@ -43,12 +49,12 @@ func BenchmarkGenerate(b *testing.B) {
 }
 
 func TestSmockGenerateFunc(t *testing.T) {
-	os.RemoveAll("./test_package/testpackage_mock")
+	cleanup()
 
 	files := smock.GenerateMocks(smock.WithUnexportedInterfaces())
 
-	for _, i := range files {
-		source, err := os.Open(i)
+	for _, file := range files {
+		source, err := os.Open(file)
 		if err != nil {
 			panic(err)
 		}
@@ -58,7 +64,7 @@ func TestSmockGenerateFunc(t *testing.T) {
 		}
 		source.Close()
 
-		goldenFilePath := goldenFilePath(i)
+		goldenFilePath := goldenFilePath(file)
 		golden, err := os.ReadFile(goldenFilePath)
 		if err != nil {
 			t.Fatalf("Failed to read golden file %s. Might need generate first. %s", goldenFilePath, err)
@@ -69,7 +75,7 @@ func TestSmockGenerateFunc(t *testing.T) {
 }
 
 func TestGenerateAnnotated(t *testing.T) {
-	os.RemoveAll("./test_package/testpackage_mock")
+	cleanup()
 
 	for _, i := range getAnnotatedInterfaces() {
 		fmt.Printf("Generate mocks for %s:%d\n", i.File, i.Line)
@@ -102,6 +108,10 @@ func TestGenerateAnnotated(t *testing.T) {
 		}
 		source.Close()
 	}
+}
+
+func cleanup() {
+	os.RemoveAll("./test_package/testpackage_mock")
 }
 
 func ToUnixLineEndings(s string) string {
