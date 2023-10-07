@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -25,10 +24,8 @@ const testGoldenFileDir = "golden_test"
 var generate = flag.Bool("generate", false, "generate golden files")
 
 func TestMain(m *testing.M) {
-	_, filename, _, _ := runtime.Caller(0)
-
 	logger.EnableLogger()
-	if err := os.Chdir(path.Dir(filename) + testPackagePath); err != nil {
+	if err := os.Chdir(testPackagePath); err != nil {
 		panic(err)
 	}
 
