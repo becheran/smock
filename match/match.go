@@ -5,6 +5,8 @@
 // [Not] will negate a [Match] expression.
 package match
 
+import "reflect"
+
 // Match is a simple expression which evaluates to be either 'true' or 'false'
 type Match[T any] func(e T) bool
 
@@ -37,6 +39,8 @@ func Not[T any](o Match[T]) Match[T] {
 	return func(e T) bool { return !o(e) }
 }
 
+// Comparable
+
 // Eq returns a function which will be true if `other` is equal to the input
 func Eq[T comparable](other T) Match[T] {
 	return func(val T) bool {
@@ -53,6 +57,16 @@ func AnyOf[T comparable](other ...T) Match[T] {
 			}
 		}
 		return false
+	}
+}
+
+// Any
+
+// DeepEqual returns a function which will be true if `other`
+// is equal to the input using to the [reflect.DeepEqual] function
+func DeepEqual[T any](other T) Match[T] {
+	return func(val T) bool {
+		return reflect.DeepEqual(val, other)
 	}
 }
 
