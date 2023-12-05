@@ -26,20 +26,23 @@ func NewMockExtend(t interface {
 	t.Cleanup(func () {
 		errStr := ""
 		for _, v := range m.vRetType {
-			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
-				errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
 			}
 		}
 		for _, v := range m.vUseStdType {
-			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
-				errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
 			}
 		}
 		if errStr != "" {
 			t.Helper()
 			t.Fatalf(errStr)
-		}
-	})
+		}})
 	return m
 }
 
@@ -49,15 +52,19 @@ type MockExtend struct {
 		Helper()
 	}
 	
-	vRetType []*struct{fun func() (r0 testpackage.MyType); validateArgs func() bool; expectedCalled int; called int}
-	vUseStdType []*struct{fun func(fi os.FileInfo) (r0 io.Reader); validateArgs func(fi os.FileInfo) bool; expectedCalled int; called int}
+	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 testpackage.MyType); expectedCalled int; called int}}
+	vUseStdType []*struct{validateArgs func(fi os.FileInfo) bool; expected []*struct{fun func(fi os.FileInfo) (r0 io.Reader); expectedCalled int; called int}}
 }
 
 func (_this *MockExtend) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
-			_check.called++
-			return _check.fun()
+			for _ctr, _exp := range _check.expected {
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					return _exp.fun()
+				}
+			}
 		}
 	}
 	_this.t.Helper()
@@ -68,8 +75,12 @@ func (_this *MockExtend) RetType() (r0 testpackage.MyType) {
 func (_this *MockExtend) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
-			_check.called++
-			return _check.fun(fi)
+			for _ctr, _exp := range _check.expected {
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					return _exp.fun(fi)
+				}
+			}
 		}
 	}
 	_this.t.Helper()
@@ -99,7 +110,7 @@ func (_this *MockExtend) unexpectedCall(method string, args ...any) {
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
 // Use this to setup your mock for your specific test scenario.
 func (_this *MockExtend) WHEN() *MockExtendWhen {
-	return &MockExtendWhen{
+	return &MockExtendWhen {
 		m: _this,
 	}
 }
@@ -110,128 +121,290 @@ type MockExtendWhen struct {
 
 // Defines the behavior when RetType of the mock is called.
 //
-// As a default the method can be called any times.
-// To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *MockExtendWhen) RetType() *MockExtendRetTypeWhen {
+// As a default the method is expected to be called once.
+// To change this behavior use the `Times()` method to define how often the function shall be called.
+func (_this *MockExtendWhen) RetType() *MockExtendRetTypeWhenWithTimes {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
 			_this.m.t.Fatalf("Unreachable condition. Call to 'RetType' is already captured by previous WHEN statement.")
 		}
 	}
-	var validator struct {
+	var defaultExpected struct {
 		fun func() (r0 testpackage.MyType)
-		validateArgs func() bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func() (r0 testpackage.MyType) { return }
-	validator.expectedCalled = -1
+	defaultExpected.fun = func() (r0 testpackage.MyType) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func() bool
+		expected []*struct {
+			fun func() (r0 testpackage.MyType)
+			expectedCalled int
+			called int
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
-	return &MockExtendRetTypeWhen{fun: &validator.fun, MockExtendTimes: &MockExtendTimes{expectedCalled: &validator.expectedCalled}} 
+	var _then func() *MockExtendRetTypeWhen
+	_then = func() *MockExtendRetTypeWhen {
+		var _newExpected struct {
+			fun func() (r0 testpackage.MyType)
+			expectedCalled int
+			called int
+		}
+		_newExpected.fun = func() (r0 testpackage.MyType) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockExtendRetTypeWhen {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockExtendTimes[*MockExtendRetTypeWhen] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockExtendThen: MockExtendThen[*MockExtendRetTypeWhen]{ then: _then, t: _this.m.t},
+	}
+	return &MockExtendRetTypeWhenWithTimes {
+		MockExtendRetTypeWhen: &MockExtendRetTypeWhen {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		},
+		MockExtendTimes: times,
+	}
 }
 
 type MockExtendRetTypeWhen struct {
-	*MockExtendTimes
-	fun *func() (r0 testpackage.MyType)
+	expected []*struct {
+		fun func() (r0 testpackage.MyType)
+		expectedCalled int
+		called int
+	}
+	then func() *MockExtendRetTypeWhen
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockExtendRetTypeWhenWithTimes struct {
+	*MockExtendTimes[*MockExtendRetTypeWhen]
+	*MockExtendRetTypeWhen
 }
 
 // Return the provided values when called
-func (_this *MockExtendRetTypeWhen) Return(r0 testpackage.MyType) *MockExtendTimes {
-	*_this.fun = func() (testpackage.MyType) { return r0 }
-	return _this.MockExtendTimes
+func (_this *MockExtendRetTypeWhen) Return(r0 testpackage.MyType) *MockExtendTimes[*MockExtendRetTypeWhen] {
+	_this.expected[len(_this.expected) -1].fun = func() (testpackage.MyType) { return r0 }
+	return &MockExtendTimes[*MockExtendRetTypeWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockExtendThen: MockExtendThen[*MockExtendRetTypeWhen]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockExtendRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *MockExtendTimes {
-	*_this.fun = do
-	return _this.MockExtendTimes
+func (_this *MockExtendRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *MockExtendTimes[*MockExtendRetTypeWhen] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockExtendTimes[*MockExtendRetTypeWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockExtendThen: MockExtendThen[*MockExtendRetTypeWhen]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Defines the behavior when UseStdType of the mock is called.
 //
-// As a default the method can be called any times.
-// To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeExpect {
+// As a default the method is expected to be called once.
+// To change this behavior use the `Times()` method to define how often the function shall be called.
+func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeExpectWithTimes {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
 			_this.m.t.Fatalf("Unreachable condition. Call to 'UseStdType' is already captured by previous WHEN statement.")
 		}
 	}
-	var validator struct {
+	var defaultExpected struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
-		validateArgs func(fi os.FileInfo) bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
-	validator.expectedCalled = -1
+	defaultExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func(fi os.FileInfo) bool
+		expected []*struct {
+			fun func(fi os.FileInfo) (r0 io.Reader)
+			expectedCalled int
+			called int
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
-	return &MockExtendUseStdTypeExpect {
-		MockExtendUseStdTypeWhen: &MockExtendUseStdTypeWhen{fun: &validator.fun, MockExtendTimes: &MockExtendTimes{expectedCalled: &validator.expectedCalled}},
-		validateArgs: &validator.validateArgs,
+	var _then func() *MockExtendUseStdTypeWhen
+	_then = func() *MockExtendUseStdTypeWhen {
+		var _newExpected struct {
+			fun func(fi os.FileInfo) (r0 io.Reader)
+			expectedCalled int
+			called int
+		}
+		_newExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockExtendUseStdTypeWhen {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockExtendTimes[*MockExtendUseStdTypeWhen] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockExtendThen: MockExtendThen[*MockExtendUseStdTypeWhen]{ then: _then, t: _this.m.t},
+	}
+	return &MockExtendUseStdTypeExpectWithTimes {
+		MockExtendUseStdTypeExpect: &MockExtendUseStdTypeExpect {
+			MockExtendUseStdTypeWhen: &MockExtendUseStdTypeWhen {
+				expected: validator.expected,
+				then: _then,
+				t: _this.m.t,
+			},
+			validateArgs: &validator.validateArgs,
+			times: times,
+		},
+		MockExtendTimes: times,
 	}
 }
 
 type MockExtendUseStdTypeExpect struct {
 	*MockExtendUseStdTypeWhen
 	validateArgs *func(fi os.FileInfo) bool
+	times *MockExtendTimes[*MockExtendUseStdTypeWhen]
 }
 
 // Expect will filter for given arguments.
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockExtendUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *MockExtendUseStdTypeWhen {
+func (_this *MockExtendUseStdTypeExpect) Expect(fi func(os.FileInfo) bool) *MockExtendUseStdTypeWhenWithTimes {
 	if !(fi == nil) {
 		*_this.validateArgs = func(_fi os.FileInfo) bool {
 			return (fi == nil || fi(_fi))
 		}
 	}
-	return _this.MockExtendUseStdTypeWhen
+	return &MockExtendUseStdTypeWhenWithTimes {
+		MockExtendUseStdTypeWhen: _this.MockExtendUseStdTypeWhen,
+		MockExtendTimes: _this.times,
+	}
+}
+
+type MockExtendUseStdTypeExpectWithTimes struct {
+	*MockExtendTimes[*MockExtendUseStdTypeWhen]
+	*MockExtendUseStdTypeExpect
 }
 
 type MockExtendUseStdTypeWhen struct {
-	*MockExtendTimes
-	fun *func(fi os.FileInfo) (r0 io.Reader)
+	expected []*struct {
+		fun func(fi os.FileInfo) (r0 io.Reader)
+		expectedCalled int
+		called int
+	}
+	then func() *MockExtendUseStdTypeWhen
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockExtendUseStdTypeWhenWithTimes struct {
+	*MockExtendTimes[*MockExtendUseStdTypeWhen]
+	*MockExtendUseStdTypeWhen
 }
 
 // Return the provided values when called
-func (_this *MockExtendUseStdTypeWhen) Return(r0 io.Reader) *MockExtendTimes {
-	*_this.fun = func(os.FileInfo) (io.Reader) { return r0 }
-	return _this.MockExtendTimes
+func (_this *MockExtendUseStdTypeWhen) Return(r0 io.Reader) *MockExtendTimes[*MockExtendUseStdTypeWhen] {
+	_this.expected[len(_this.expected) -1].fun = func(os.FileInfo) (io.Reader) { return r0 }
+	return &MockExtendTimes[*MockExtendUseStdTypeWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockExtendThen: MockExtendThen[*MockExtendUseStdTypeWhen]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockExtendUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *MockExtendTimes {
-	*_this.fun = do
-	return _this.MockExtendTimes
+func (_this *MockExtendUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 io.Reader)) *MockExtendTimes[*MockExtendUseStdTypeWhen] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockExtendTimes[*MockExtendUseStdTypeWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockExtendThen: MockExtendThen[*MockExtendUseStdTypeWhen]{ then: _this.then, t: _this.t},
+	}
 }
 
-type MockExtendTimes struct {
+type MockExtendThen [T any] struct {
+	then func() T
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+// Then continue with another action
+func (_this *MockExtendThen[T]) Then() T {
+	_this.t.Helper()
+	return _this.then()
+}
+
+type MockExtendTimes[T any] struct {
 	expectedCalled *int
+	then func() T
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+	MockExtendThen[T]
 }
 
 // Times sets how often the mocked function is expected to be called.
 // Test will fail if the number of calls do not match with the expected calls value.
-//
-// A number < 0 means that a function may be called any times which is also the default behavior.
-func (_this *MockExtendTimes) Times(times int) {
+func (_this *MockExtendTimes[T]) Times(times int) *MockExtendThen[T] {
+	_this.t.Helper()
 	*_this.expectedCalled = times
+	retVal := &MockExtendThen[T] { t: _this.t, then: _this.then }
+	if times <= 0 {
+		retVal.then = func() T {
+			_this.t.Helper()
+			callString := "AnyTimes"
+			if *_this.expectedCalled == 0 { callString = "Never" }
+			_this.t.Fatalf("Then statement is not reachable. Expected calls of previous statement: %s", callString)
+			panic("Unreachable!")
+		}
+	}
+	return retVal
 }
 
 // AnyTimes disables the check how often a function was called.
-func (_this *MockExtendTimes) AnyTimes() {
+func (_this *MockExtendTimes[T]) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
-// Never will fail if the function is ever called. Is the same as Times(0).
-func (_this *MockExtendTimes) Never() {
+// Never will fail if the function is ever called.
+func (_this *MockExtendTimes[T]) Never() {
 	*_this.expectedCalled = 0
 }
 
-// Once will fail if the function is not called once. Is the same as Times(1).
-func (_this *MockExtendTimes) Once() {
-	*_this.expectedCalled = 1
-}

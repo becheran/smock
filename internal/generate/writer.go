@@ -30,6 +30,9 @@ func (w *writer) Ident() {
 
 func (w *writer) EndIdent() {
 	w.ident--
+	if w.ident < 0 {
+		w.ident = 0
+	}
 }
 
 func (w *writer) String() string {

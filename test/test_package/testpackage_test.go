@@ -22,10 +22,10 @@ func TestSimpleWhen(t *testing.T) {
 	m.WHEN().
 		Baz().
 		Expect(match.Eq(23).Or(match.Eq(3)).Or(match.Eq(2)), nil).
-		Return("2")
+		Return("3")
 	assert.Equal(t, "1", m.Baz(1, "foo"))
 	assert.Equal(t, "2", m.Baz(2, "bzs"))
-	assert.Equal(t, "2", m.Baz(3, ""))
+	assert.Equal(t, "3", m.Baz(3, ""))
 }
 
 func TestFallBackToMatchAll(t *testing.T) {
@@ -36,7 +36,8 @@ func TestFallBackToMatchAll(t *testing.T) {
 		Return("1")
 	m.WHEN().
 		Baz().
-		Return("2")
+		Return("2").
+		Times(2)
 	assert.Equal(t, "1", m.Baz(1, "1"))
 	assert.Equal(t, "2", m.Baz(2, "1"))
 	assert.Equal(t, "2", m.Baz(3, "1"))
@@ -109,9 +110,23 @@ func TestOnceSuccess(t *testing.T) {
 func times(t *testing.T, expected, times int, err string) {
 	tester := &Tester{t: t}
 	m := testpackage_mock.NewMockSimple(tester)
-	m.WHEN().Foo().Times(expected)
-	m.WHEN().Bar().Return("").Times(expected)
-	m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 }).Times(expected)
+	if expected < 0 {
+		m.WHEN().Foo().AnyTimes()
+		m.WHEN().Bar().Return("").AnyTimes()
+		m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 }).AnyTimes()
+	} else if expected == 0 {
+		m.WHEN().Foo().Never()
+		m.WHEN().Bar().Return("").Never()
+		m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 }).Never()
+	} else if expected == 1 {
+		m.WHEN().Foo()
+		m.WHEN().Bar().Return("")
+		m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 })
+	} else {
+		m.WHEN().Foo().Times(expected)
+		m.WHEN().Bar().Return("").Times(expected)
+		m.WHEN().SingleArg().Expect(func(i int) bool { return i == 42 }).Times(expected)
+	}
 	m.WHEN().SingleArg().AnyTimes()
 	m.SingleArg(1)
 	for i := 0; i < times; i++ {
@@ -127,14 +142,106 @@ func times(t *testing.T, expected, times int, err string) {
 	}
 }
 
+func TestThen(t *testing.T) {
+	tester := &Tester{t: t}
+	m := testpackage_mock.NewMockSimple(tester)
+	m.WHEN().
+		Foo().
+		Do(func() { fmt.Println("1") }).
+		Times(1).
+		Then().
+		Do(func() { fmt.Println("2") }).
+		Times(2).
+		Then().
+		Do(func() { fmt.Println("3") }).
+		Times(3)
+
+	for i := 0; i < 10; i++ {
+		m.Foo()
+	}
+
+	tester.cleanup()
+
+	assert.Equal(t, `
+Expected 'Foo' to be called 3 times, but was called 7 times.`, tester.errStr)
+}
+
+func TestThenPass(t *testing.T) {
+	m := testpackage_mock.NewMockSimple(t)
+	m.WHEN().
+		Foo().
+		Times(3).
+		Then().
+		Do(func() { fmt.Println("2") }).
+		Times(3).
+		Then().
+		Do(func() { fmt.Println("3") }).
+		Times(3).
+		Then()
+
+	for i := 0; i < 10; i++ {
+		m.Foo()
+	}
+}
+
+func TestThenFailWhenUnreachable(t *testing.T) {
+	fatalChan := make(chan bool)
+	go func() {
+		<-fatalChan
+	}()
+	tester := &Tester{t: t, fatalChan: fatalChan}
+
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Equal(t, `Then statement is not reachable. Expected calls of previous statement: AnyTimes`, tester.errStr)
+		}
+	}()
+
+	m := testpackage_mock.NewMockSimple(tester)
+	m.WHEN().
+		Foo().
+		Do(func() { fmt.Println("1") }).
+		Times(-1).
+		Then()
+
+	m.Foo()
+}
+
+func TestThenWithExpect(t *testing.T) {
+	tester := &Tester{t: t}
+
+	m := testpackage_mock.NewMockSimple(tester)
+	m.WHEN().
+		Bar().Expect(nil, nil, nil, nil, nil, func(b []byte) bool { return len(b) == 0 }).
+		Return("One").
+		Then().
+		Return("Two").
+		Then().
+		Return("Two").
+		Then().
+		Return("Three").
+		Times(3)
+
+	assert.Equal(t, "One", m.Bar(0, "", struct{}{}, nil, nil, nil))
+	assert.Equal(t, "Two", m.Bar(0, "", struct{}{}, nil, nil, nil))
+	assert.Equal(t, "Two", m.Bar(0, "", struct{}{}, nil, nil, nil))
+	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
+	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
+	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
+}
+
 type Tester struct {
-	t       *testing.T
-	errStr  string
-	cleanup func()
+	t         *testing.T
+	errStr    string
+	cleanup   func()
+	fatalChan chan bool
 }
 
 func (t *Tester) Fatalf(format string, args ...any) {
 	t.errStr = fmt.Sprintf(format, args...)
+	if t.fatalChan != nil {
+		t.fatalChan <- true
+	}
 }
 
 func (t *Tester) Helper() {

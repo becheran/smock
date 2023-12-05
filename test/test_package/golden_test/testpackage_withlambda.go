@@ -20,25 +20,30 @@ func NewMockWithLambda[T comparable](t interface {
 	t.Cleanup(func () {
 		errStr := ""
 		for _, v := range m.vFoo {
-			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
-				errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
 			}
 		}
 		for _, v := range m.vBar {
-			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
-				errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
 			}
 		}
 		for _, v := range m.vBaz {
-			if v.expectedCalled >= 0 && v.expectedCalled != v.called {
-				errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times.", v.expectedCalled, v.called)
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
 			}
 		}
 		if errStr != "" {
 			t.Helper()
 			t.Fatalf(errStr)
-		}
-	})
+		}})
 	return m
 }
 
@@ -48,16 +53,20 @@ type MockWithLambda[T comparable] struct {
 		Helper()
 	}
 	
-	vFoo []*struct{fun func(a int, b ...string) (r0 bool); validateArgs func(a int, b ...string) bool; expectedCalled int; called int}
-	vBar []*struct{fun func(b ...struct{}) (r0 bool); validateArgs func(b ...struct{}) bool; expectedCalled int; called int}
-	vBaz []*struct{fun func(b ...T) (r0 bool); validateArgs func(b ...T) bool; expectedCalled int; called int}
+	vFoo []*struct{validateArgs func(a int, b ...string) bool; expected []*struct{fun func(a int, b ...string) (r0 bool); expectedCalled int; called int}}
+	vBar []*struct{validateArgs func(b ...struct{}) bool; expected []*struct{fun func(b ...struct{}) (r0 bool); expectedCalled int; called int}}
+	vBaz []*struct{validateArgs func(b ...T) bool; expected []*struct{fun func(b ...T) (r0 bool); expectedCalled int; called int}}
 }
 
 func (_this *MockWithLambda[T]) Foo(a int, b ...string) (r0 bool) {
 	for _, _check := range _this.vFoo {
 		if _check.validateArgs == nil || _check.validateArgs(a, b...) {
-			_check.called++
-			return _check.fun(a, b...)
+			for _ctr, _exp := range _check.expected {
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					return _exp.fun(a, b...)
+				}
+			}
 		}
 	}
 	_this.t.Helper()
@@ -68,8 +77,12 @@ func (_this *MockWithLambda[T]) Foo(a int, b ...string) (r0 bool) {
 func (_this *MockWithLambda[T]) Bar(b ...struct{}) (r0 bool) {
 	for _, _check := range _this.vBar {
 		if _check.validateArgs == nil || _check.validateArgs(b...) {
-			_check.called++
-			return _check.fun(b...)
+			for _ctr, _exp := range _check.expected {
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					return _exp.fun(b...)
+				}
+			}
 		}
 	}
 	_this.t.Helper()
@@ -80,8 +93,12 @@ func (_this *MockWithLambda[T]) Bar(b ...struct{}) (r0 bool) {
 func (_this *MockWithLambda[T]) Baz(b ...T) (r0 bool) {
 	for _, _check := range _this.vBaz {
 		if _check.validateArgs == nil || _check.validateArgs(b...) {
-			_check.called++
-			return _check.fun(b...)
+			for _ctr, _exp := range _check.expected {
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					return _exp.fun(b...)
+				}
+			}
 		}
 	}
 	_this.t.Helper()
@@ -111,7 +128,7 @@ func (_this *MockWithLambda[T]) unexpectedCall(method string, args ...any) {
 // WHEN is used to set the mock behavior when a specific functions on the object are called.
 // Use this to setup your mock for your specific test scenario.
 func (_this *MockWithLambda[T]) WHEN() *MockWithLambdaWhen[T] {
-	return &MockWithLambdaWhen[T]{
+	return &MockWithLambdaWhen[T] {
 		m: _this,
 	}
 }
@@ -122,40 +139,82 @@ type MockWithLambdaWhen[T comparable] struct {
 
 // Defines the behavior when Foo of the mock is called.
 //
-// As a default the method can be called any times.
-// To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooExpect[T] {
+// As a default the method is expected to be called once.
+// To change this behavior use the `Times()` method to define how often the function shall be called.
+func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooExpectWithTimes[T] {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
 			_this.m.t.Fatalf("Unreachable condition. Call to 'Foo' is already captured by previous WHEN statement.")
 		}
 	}
-	var validator struct {
+	var defaultExpected struct {
 		fun func(a int, b ...string) (r0 bool)
-		validateArgs func(a int, b ...string) bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func(a int, b ...string) (r0 bool) { return }
-	validator.expectedCalled = -1
+	defaultExpected.fun = func(a int, b ...string) (r0 bool) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func(a int, b ...string) bool
+		expected []*struct {
+			fun func(a int, b ...string) (r0 bool)
+			expectedCalled int
+			called int
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFoo = append(_this.m.vFoo, &validator)
-	return &MockWithLambdaFooExpect[T] {
-		MockWithLambdaFooWhen: &MockWithLambdaFooWhen[T]{fun: &validator.fun, MockWithLambdaTimes: &MockWithLambdaTimes{expectedCalled: &validator.expectedCalled}},
-		validateArgs: &validator.validateArgs,
+	var _then func() *MockWithLambdaFooWhen[T]
+	_then = func() *MockWithLambdaFooWhen[T] {
+		var _newExpected struct {
+			fun func(a int, b ...string) (r0 bool)
+			expectedCalled int
+			called int
+		}
+		_newExpected.fun = func(a int, b ...string) (r0 bool) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockWithLambdaFooWhen[T] {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockWithLambdaTimes[*MockWithLambdaFooWhen[T]] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaFooWhen[T]]{ then: _then, t: _this.m.t},
+	}
+	return &MockWithLambdaFooExpectWithTimes[T] {
+		MockWithLambdaFooExpect: &MockWithLambdaFooExpect[T] {
+			MockWithLambdaFooWhen: &MockWithLambdaFooWhen[T] {
+				expected: validator.expected,
+				then: _then,
+				t: _this.m.t,
+			},
+			validateArgs: &validator.validateArgs,
+			times: times,
+		},
+		MockWithLambdaTimes: times,
 	}
 }
 
 type MockWithLambdaFooExpect[T comparable] struct {
 	*MockWithLambdaFooWhen[T]
 	validateArgs *func(a int, b ...string) bool
+	times *MockWithLambdaTimes[*MockWithLambdaFooWhen[T]]
 }
 
 // Expect will filter for given arguments.
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockWithLambdaFooExpect[T]) Expect(a func(int) bool, b ...func(string) bool) *MockWithLambdaFooWhen[T] {
+func (_this *MockWithLambdaFooExpect[T]) Expect(a func(int) bool, b ...func(string) bool) *MockWithLambdaFooWhenWithTimes[T] {
 	if !(a == nil && len(b) == 0) {
 		*_this.validateArgs = func(_a int, _b ...string) bool {
 			for _idx, _val := range _b {
@@ -166,62 +225,135 @@ func (_this *MockWithLambdaFooExpect[T]) Expect(a func(int) bool, b ...func(stri
 			return (a == nil || a(_a)) && true
 		}
 	}
-	return _this.MockWithLambdaFooWhen
+	return &MockWithLambdaFooWhenWithTimes[T] {
+		MockWithLambdaFooWhen: _this.MockWithLambdaFooWhen,
+		MockWithLambdaTimes: _this.times,
+	}
+}
+
+type MockWithLambdaFooExpectWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaFooWhen[T]]
+	*MockWithLambdaFooExpect[T]
 }
 
 type MockWithLambdaFooWhen[T comparable] struct {
-	*MockWithLambdaTimes
-	fun *func(a int, b ...string) (r0 bool)
+	expected []*struct {
+		fun func(a int, b ...string) (r0 bool)
+		expectedCalled int
+		called int
+	}
+	then func() *MockWithLambdaFooWhen[T]
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockWithLambdaFooWhenWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaFooWhen[T]]
+	*MockWithLambdaFooWhen[T]
 }
 
 // Return the provided values when called
-func (_this *MockWithLambdaFooWhen[T]) Return(r0 bool) *MockWithLambdaTimes {
-	*_this.fun = func(int, ...string) (bool) { return r0 }
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaFooWhen[T]) Return(r0 bool) *MockWithLambdaTimes[*MockWithLambdaFooWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = func(int, ...string) (bool) { return r0 }
+	return &MockWithLambdaTimes[*MockWithLambdaFooWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaFooWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockWithLambdaFooWhen[T]) Do(do func(a int, b ...string) (r0 bool)) *MockWithLambdaTimes {
-	*_this.fun = do
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaFooWhen[T]) Do(do func(a int, b ...string) (r0 bool)) *MockWithLambdaTimes[*MockWithLambdaFooWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockWithLambdaTimes[*MockWithLambdaFooWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaFooWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Defines the behavior when Bar of the mock is called.
 //
-// As a default the method can be called any times.
-// To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarExpect[T] {
+// As a default the method is expected to be called once.
+// To change this behavior use the `Times()` method to define how often the function shall be called.
+func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarExpectWithTimes[T] {
 	for _, f := range _this.m.vBar {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
 			_this.m.t.Fatalf("Unreachable condition. Call to 'Bar' is already captured by previous WHEN statement.")
 		}
 	}
-	var validator struct {
+	var defaultExpected struct {
 		fun func(b ...struct{}) (r0 bool)
-		validateArgs func(b ...struct{}) bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func(b ...struct{}) (r0 bool) { return }
-	validator.expectedCalled = -1
+	defaultExpected.fun = func(b ...struct{}) (r0 bool) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func(b ...struct{}) bool
+		expected []*struct {
+			fun func(b ...struct{}) (r0 bool)
+			expectedCalled int
+			called int
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBar = append(_this.m.vBar, &validator)
-	return &MockWithLambdaBarExpect[T] {
-		MockWithLambdaBarWhen: &MockWithLambdaBarWhen[T]{fun: &validator.fun, MockWithLambdaTimes: &MockWithLambdaTimes{expectedCalled: &validator.expectedCalled}},
-		validateArgs: &validator.validateArgs,
+	var _then func() *MockWithLambdaBarWhen[T]
+	_then = func() *MockWithLambdaBarWhen[T] {
+		var _newExpected struct {
+			fun func(b ...struct{}) (r0 bool)
+			expectedCalled int
+			called int
+		}
+		_newExpected.fun = func(b ...struct{}) (r0 bool) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockWithLambdaBarWhen[T] {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockWithLambdaTimes[*MockWithLambdaBarWhen[T]] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBarWhen[T]]{ then: _then, t: _this.m.t},
+	}
+	return &MockWithLambdaBarExpectWithTimes[T] {
+		MockWithLambdaBarExpect: &MockWithLambdaBarExpect[T] {
+			MockWithLambdaBarWhen: &MockWithLambdaBarWhen[T] {
+				expected: validator.expected,
+				then: _then,
+				t: _this.m.t,
+			},
+			validateArgs: &validator.validateArgs,
+			times: times,
+		},
+		MockWithLambdaTimes: times,
 	}
 }
 
 type MockWithLambdaBarExpect[T comparable] struct {
 	*MockWithLambdaBarWhen[T]
 	validateArgs *func(b ...struct{}) bool
+	times *MockWithLambdaTimes[*MockWithLambdaBarWhen[T]]
 }
 
 // Expect will filter for given arguments.
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockWithLambdaBarExpect[T]) Expect(b ...func(struct{}) bool) *MockWithLambdaBarWhen[T] {
+func (_this *MockWithLambdaBarExpect[T]) Expect(b ...func(struct{}) bool) *MockWithLambdaBarWhenWithTimes[T] {
 	if !(len(b) == 0) {
 		*_this.validateArgs = func(_b ...struct{}) bool {
 			for _idx, _val := range _b {
@@ -232,62 +364,135 @@ func (_this *MockWithLambdaBarExpect[T]) Expect(b ...func(struct{}) bool) *MockW
 			return true
 		}
 	}
-	return _this.MockWithLambdaBarWhen
+	return &MockWithLambdaBarWhenWithTimes[T] {
+		MockWithLambdaBarWhen: _this.MockWithLambdaBarWhen,
+		MockWithLambdaTimes: _this.times,
+	}
+}
+
+type MockWithLambdaBarExpectWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaBarWhen[T]]
+	*MockWithLambdaBarExpect[T]
 }
 
 type MockWithLambdaBarWhen[T comparable] struct {
-	*MockWithLambdaTimes
-	fun *func(b ...struct{}) (r0 bool)
+	expected []*struct {
+		fun func(b ...struct{}) (r0 bool)
+		expectedCalled int
+		called int
+	}
+	then func() *MockWithLambdaBarWhen[T]
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockWithLambdaBarWhenWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaBarWhen[T]]
+	*MockWithLambdaBarWhen[T]
 }
 
 // Return the provided values when called
-func (_this *MockWithLambdaBarWhen[T]) Return(r0 bool) *MockWithLambdaTimes {
-	*_this.fun = func(...struct{}) (bool) { return r0 }
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaBarWhen[T]) Return(r0 bool) *MockWithLambdaTimes[*MockWithLambdaBarWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = func(...struct{}) (bool) { return r0 }
+	return &MockWithLambdaTimes[*MockWithLambdaBarWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBarWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockWithLambdaBarWhen[T]) Do(do func(b ...struct{}) (r0 bool)) *MockWithLambdaTimes {
-	*_this.fun = do
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaBarWhen[T]) Do(do func(b ...struct{}) (r0 bool)) *MockWithLambdaTimes[*MockWithLambdaBarWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockWithLambdaTimes[*MockWithLambdaBarWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBarWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Defines the behavior when Baz of the mock is called.
 //
-// As a default the method can be called any times.
-// To change this behavior use the Times() method to define how often the function shall be called.
-func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazExpect[T] {
+// As a default the method is expected to be called once.
+// To change this behavior use the `Times()` method to define how often the function shall be called.
+func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazExpectWithTimes[T] {
 	for _, f := range _this.m.vBaz {
 		if f.validateArgs == nil {
 			_this.m.t.Helper()
 			_this.m.t.Fatalf("Unreachable condition. Call to 'Baz' is already captured by previous WHEN statement.")
 		}
 	}
-	var validator struct {
+	var defaultExpected struct {
 		fun func(b ...T) (r0 bool)
-		validateArgs func(b ...T) bool
 		expectedCalled int
 		called int
 	}
-	validator.fun = func(b ...T) (r0 bool) { return }
-	validator.expectedCalled = -1
+	defaultExpected.fun = func(b ...T) (r0 bool) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func(b ...T) bool
+		expected []*struct {
+			fun func(b ...T) (r0 bool)
+			expectedCalled int
+			called int
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBaz = append(_this.m.vBaz, &validator)
-	return &MockWithLambdaBazExpect[T] {
-		MockWithLambdaBazWhen: &MockWithLambdaBazWhen[T]{fun: &validator.fun, MockWithLambdaTimes: &MockWithLambdaTimes{expectedCalled: &validator.expectedCalled}},
-		validateArgs: &validator.validateArgs,
+	var _then func() *MockWithLambdaBazWhen[T]
+	_then = func() *MockWithLambdaBazWhen[T] {
+		var _newExpected struct {
+			fun func(b ...T) (r0 bool)
+			expectedCalled int
+			called int
+		}
+		_newExpected.fun = func(b ...T) (r0 bool) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockWithLambdaBazWhen[T] {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockWithLambdaTimes[*MockWithLambdaBazWhen[T]] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBazWhen[T]]{ then: _then, t: _this.m.t},
+	}
+	return &MockWithLambdaBazExpectWithTimes[T] {
+		MockWithLambdaBazExpect: &MockWithLambdaBazExpect[T] {
+			MockWithLambdaBazWhen: &MockWithLambdaBazWhen[T] {
+				expected: validator.expected,
+				then: _then,
+				t: _this.m.t,
+			},
+			validateArgs: &validator.validateArgs,
+			times: times,
+		},
+		MockWithLambdaTimes: times,
 	}
 }
 
 type MockWithLambdaBazExpect[T comparable] struct {
 	*MockWithLambdaBazWhen[T]
 	validateArgs *func(b ...T) bool
+	times *MockWithLambdaTimes[*MockWithLambdaBazWhen[T]]
 }
 
 // Expect will filter for given arguments.
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockWithLambdaBazExpect[T]) Expect(b ...func(T) bool) *MockWithLambdaBazWhen[T] {
+func (_this *MockWithLambdaBazExpect[T]) Expect(b ...func(T) bool) *MockWithLambdaBazWhenWithTimes[T] {
 	if !(len(b) == 0) {
 		*_this.validateArgs = func(_b ...T) bool {
 			for _idx, _val := range _b {
@@ -298,49 +503,106 @@ func (_this *MockWithLambdaBazExpect[T]) Expect(b ...func(T) bool) *MockWithLamb
 			return true
 		}
 	}
-	return _this.MockWithLambdaBazWhen
+	return &MockWithLambdaBazWhenWithTimes[T] {
+		MockWithLambdaBazWhen: _this.MockWithLambdaBazWhen,
+		MockWithLambdaTimes: _this.times,
+	}
+}
+
+type MockWithLambdaBazExpectWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaBazWhen[T]]
+	*MockWithLambdaBazExpect[T]
 }
 
 type MockWithLambdaBazWhen[T comparable] struct {
-	*MockWithLambdaTimes
-	fun *func(b ...T) (r0 bool)
+	expected []*struct {
+		fun func(b ...T) (r0 bool)
+		expectedCalled int
+		called int
+	}
+	then func() *MockWithLambdaBazWhen[T]
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockWithLambdaBazWhenWithTimes[T comparable] struct {
+	*MockWithLambdaTimes[*MockWithLambdaBazWhen[T]]
+	*MockWithLambdaBazWhen[T]
 }
 
 // Return the provided values when called
-func (_this *MockWithLambdaBazWhen[T]) Return(r0 bool) *MockWithLambdaTimes {
-	*_this.fun = func(...T) (bool) { return r0 }
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaBazWhen[T]) Return(r0 bool) *MockWithLambdaTimes[*MockWithLambdaBazWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = func(...T) (bool) { return r0 }
+	return &MockWithLambdaTimes[*MockWithLambdaBazWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBazWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockWithLambdaBazWhen[T]) Do(do func(b ...T) (r0 bool)) *MockWithLambdaTimes {
-	*_this.fun = do
-	return _this.MockWithLambdaTimes
+func (_this *MockWithLambdaBazWhen[T]) Do(do func(b ...T) (r0 bool)) *MockWithLambdaTimes[*MockWithLambdaBazWhen[T]] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockWithLambdaTimes[*MockWithLambdaBazWhen[T]] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockWithLambdaThen: MockWithLambdaThen[*MockWithLambdaBazWhen[T]]{ then: _this.then, t: _this.t},
+	}
 }
 
-type MockWithLambdaTimes struct {
+type MockWithLambdaThen [T any] struct {
+	then func() T
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+// Then continue with another action
+func (_this *MockWithLambdaThen[T]) Then() T {
+	_this.t.Helper()
+	return _this.then()
+}
+
+type MockWithLambdaTimes[T any] struct {
 	expectedCalled *int
+	then func() T
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+	MockWithLambdaThen[T]
 }
 
 // Times sets how often the mocked function is expected to be called.
 // Test will fail if the number of calls do not match with the expected calls value.
-//
-// A number < 0 means that a function may be called any times which is also the default behavior.
-func (_this *MockWithLambdaTimes) Times(times int) {
+func (_this *MockWithLambdaTimes[T]) Times(times int) *MockWithLambdaThen[T] {
+	_this.t.Helper()
 	*_this.expectedCalled = times
+	retVal := &MockWithLambdaThen[T] { t: _this.t, then: _this.then }
+	if times <= 0 {
+		retVal.then = func() T {
+			_this.t.Helper()
+			callString := "AnyTimes"
+			if *_this.expectedCalled == 0 { callString = "Never" }
+			_this.t.Fatalf("Then statement is not reachable. Expected calls of previous statement: %s", callString)
+			panic("Unreachable!")
+		}
+	}
+	return retVal
 }
 
 // AnyTimes disables the check how often a function was called.
-func (_this *MockWithLambdaTimes) AnyTimes() {
+func (_this *MockWithLambdaTimes[T]) AnyTimes() {
 	*_this.expectedCalled = -1
 }
 
-// Never will fail if the function is ever called. Is the same as Times(0).
-func (_this *MockWithLambdaTimes) Never() {
+// Never will fail if the function is ever called.
+func (_this *MockWithLambdaTimes[T]) Never() {
 	*_this.expectedCalled = 0
 }
 
-// Once will fail if the function is not called once. Is the same as Times(1).
-func (_this *MockWithLambdaTimes) Once() {
-	*_this.expectedCalled = 1
-}
