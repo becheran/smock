@@ -144,7 +144,7 @@ type MockInheritExtWhen struct {
 // Defines the behavior when Close of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 	for _, f := range _this.m.vClose {
 		if f.validateArgs == nil {
@@ -247,7 +247,7 @@ func (_this *MockInheritExtCloseWhen) Do(do func() (r0 error)) *MockInheritExtTi
 // Defines the behavior when Read of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 	for _, f := range _this.m.vRead {
 		if f.validateArgs == nil {
@@ -381,7 +381,7 @@ func (_this *MockInheritExtReadWhen) Do(do func(p []byte) (n int, err error)) *M
 // Defines the behavior when Seek of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 	for _, f := range _this.m.vSeek {
 		if f.validateArgs == nil {

@@ -258,7 +258,7 @@ func NewMock%s%s(t interface {
 		w.P("// Defines the behavior when %s of the mock is called.", f.Name)
 		w.P("//")
 		w.P("// As a default the method is expected to be called once.")
-		w.P("// To change this behavior use the `Times()` method to define how often the function shall be called.")
+		w.P("// To change this behavior use the Times() method to define how often the function shall be called.")
 		w.P("func (_this *%s) %s() *%s {", whenStructNameWithTypeIdentifier, f.Name, ref)
 		w.Ident()
 		w.P("for _, f := range _this.m.v%s {", f.Name)

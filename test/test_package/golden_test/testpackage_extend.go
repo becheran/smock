@@ -122,7 +122,7 @@ type MockExtendWhen struct {
 // Defines the behavior when RetType of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockExtendWhen) RetType() *MockExtendRetTypeWhenWithTimes {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
@@ -225,7 +225,7 @@ func (_this *MockExtendRetTypeWhen) Do(do func() (r0 testpackage.MyType)) *MockE
 // Defines the behavior when UseStdType of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeExpectWithTimes {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {

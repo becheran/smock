@@ -218,7 +218,7 @@ type MockInheritMultipleWhen struct {
 // Defines the behavior when Own of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTimes {
 	for _, f := range _this.m.vOwn {
 		if f.validateArgs == nil {
@@ -352,7 +352,7 @@ func (_this *MockInheritMultipleOwnWhen) Do(do func(i0 int, i1 string) (r0 int, 
 // Defines the behavior when RetType of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenWithTimes {
 	for _, f := range _this.m.vRetType {
 		if f.validateArgs == nil {
@@ -455,7 +455,7 @@ func (_this *MockInheritMultipleRetTypeWhen) Do(do func() (r0 testpackage.MyType
 // Defines the behavior when UseStdType of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTypeExpectWithTimes {
 	for _, f := range _this.m.vUseStdType {
 		if f.validateArgs == nil {
@@ -589,7 +589,7 @@ func (_this *MockInheritMultipleUseStdTypeWhen) Do(do func(fi os.FileInfo) (r0 i
 // Defines the behavior when Close of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithTimes {
 	for _, f := range _this.m.vClose {
 		if f.validateArgs == nil {
@@ -692,7 +692,7 @@ func (_this *MockInheritMultipleCloseWhen) Do(do func() (r0 error)) *MockInherit
 // Defines the behavior when Read of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithTimes {
 	for _, f := range _this.m.vRead {
 		if f.validateArgs == nil {
@@ -826,7 +826,7 @@ func (_this *MockInheritMultipleReadWhen) Do(do func(p []byte) (n int, err error
 // Defines the behavior when Seek of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithTimes {
 	for _, f := range _this.m.vSeek {
 		if f.validateArgs == nil {

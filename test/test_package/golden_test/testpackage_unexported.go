@@ -92,7 +92,7 @@ type MockunexportedWhen struct {
 // Defines the behavior when Foo of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockunexportedWhen) Foo() *MockunexportedFooWhenWithTimes {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {

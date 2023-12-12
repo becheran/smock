@@ -192,7 +192,7 @@ type MockSimpleWhen struct {
 // Defines the behavior when Foo of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockSimpleWhen) Foo() *MockSimpleFooWhenWithTimes {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
@@ -284,7 +284,7 @@ func (_this *MockSimpleFooWhen) Do(do func()) *MockSimpleTimes[*MockSimpleFooWhe
 // Defines the behavior when SingleArg of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 	for _, f := range _this.m.vSingleArg {
 		if f.validateArgs == nil {
@@ -407,7 +407,7 @@ func (_this *MockSimpleSingleArgWhen) Do(do func(i0 int)) *MockSimpleTimes[*Mock
 // Defines the behavior when Bar of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 	for _, f := range _this.m.vBar {
 		if f.validateArgs == nil {
@@ -541,7 +541,7 @@ func (_this *MockSimpleBarWhen) Do(do func(a int, b string, c struct{}, d *struc
 // Defines the behavior when Baz of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 	for _, f := range _this.m.vBaz {
 		if f.validateArgs == nil {
@@ -675,7 +675,7 @@ func (_this *MockSimpleBazWhen) Do(do func(a int, b string) (s string)) *MockSim
 // Defines the behavior when Fun of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 	for _, f := range _this.m.vFun {
 		if f.validateArgs == nil {

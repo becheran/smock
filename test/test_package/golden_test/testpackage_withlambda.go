@@ -140,7 +140,7 @@ type MockWithLambdaWhen[T comparable] struct {
 // Defines the behavior when Foo of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooExpectWithTimes[T] {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
@@ -279,7 +279,7 @@ func (_this *MockWithLambdaFooWhen[T]) Do(do func(a int, b ...string) (r0 bool))
 // Defines the behavior when Bar of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarExpectWithTimes[T] {
 	for _, f := range _this.m.vBar {
 		if f.validateArgs == nil {
@@ -418,7 +418,7 @@ func (_this *MockWithLambdaBarWhen[T]) Do(do func(b ...struct{}) (r0 bool)) *Moc
 // Defines the behavior when Baz of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazExpectWithTimes[T] {
 	for _, f := range _this.m.vBaz {
 		if f.validateArgs == nil {

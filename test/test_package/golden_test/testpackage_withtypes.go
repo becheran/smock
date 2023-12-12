@@ -116,7 +116,7 @@ type MockWithTypesWhen[T any, B any] struct {
 // Defines the behavior when Foo of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, B] {
 	for _, f := range _this.m.vFoo {
 		if f.validateArgs == nil {
@@ -250,7 +250,7 @@ func (_this *MockWithTypesFooWhen[T, B]) Do(do func(a T, b T) (r0 B)) *MockWithT
 // Defines the behavior when Empty of the mock is called.
 //
 // As a default the method is expected to be called once.
-// To change this behavior use the `Times()` method to define how often the function shall be called.
+// To change this behavior use the Times() method to define how often the function shall be called.
 func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T, B] {
 	for _, f := range _this.m.vEmpty {
 		if f.validateArgs == nil {
