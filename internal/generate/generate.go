@@ -50,6 +50,7 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 
 	fmtAlreadyImported := false
 	reflectAlreadyImported := false
+	syncAlreadyImported := false
 	for _, i := range res.Imports {
 		if !assertImplements && i.ImportName() == res.PackageName {
 			continue
@@ -60,12 +61,18 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 		if i.ImportName() == "reflect" {
 			reflectAlreadyImported = true
 		}
+		if i.ImportName() == "sync" {
+			syncAlreadyImported = true
+		}
 	}
 	if !fmtAlreadyImported {
 		res.Imports = append(res.Imports, model.Import{Path: "fmt"})
 	}
 	if !reflectAlreadyImported {
 		res.Imports = append(res.Imports, model.Import{Path: "reflect"})
+	}
+	if !syncAlreadyImported {
+		res.Imports = append(res.Imports, model.Import{Path: "sync"})
 	}
 	sort.SliceStable(res.Imports, func(a, b int) bool {
 		return strings.Compare(res.Imports[a].ImportName(), res.Imports[b].ImportName()) < 0
@@ -140,7 +147,7 @@ func NewMock%s%s(t interface {
 	printHelperInterface()
 	w.P("")
 	for _, m := range res.Methods {
-		w.P("v%s []*struct{validateArgs func(%s) bool; expected []*struct{fun func%s; expectedCalled int; called int}}",
+		w.P("v%s []*struct{validateArgs func(%s) bool; expected []*struct{fun func%s; expectedCalled int; called int; mutex sync.Mutex}}",
 			m.Name, m.Params.IdentWithTypeString(model.IdentTypeInput), m.Signature())
 	}
 	w.EndIdent()
@@ -156,9 +163,11 @@ func NewMock%s%s(t interface {
 		w.Ident()
 		w.P("for _ctr, _exp := range _check.expected {")
 		w.Ident()
+		w.P("_exp.mutex.Lock()")
 		w.P("if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {")
 		w.Ident()
 		w.P("_exp.called++")
+		w.P("_exp.mutex.Unlock()")
 		if len(f.Results) > 0 {
 			w.P("return _exp.fun(%s)", f.Params.IdentString(model.IdentTypeInput, true))
 		} else {
@@ -167,6 +176,7 @@ func NewMock%s%s(t interface {
 		}
 		w.EndIdent()
 		w.P("}")
+		w.P("_exp.mutex.Unlock()")
 		w.EndIdent()
 		w.P("}")
 		w.EndIdent()
@@ -277,6 +287,7 @@ func NewMock%s%s(t interface {
 		w.P("fun func%s", f.Signature())
 		w.P("expectedCalled int")
 		w.P("called int")
+		w.P("mutex sync.Mutex")
 		w.EndIdent()
 		w.P("}")
 		ret := ""
@@ -294,6 +305,7 @@ func NewMock%s%s(t interface {
 		w.P("fun func%s", f.Signature())
 		w.P("expectedCalled int")
 		w.P("called int")
+		w.P("mutex sync.Mutex")
 		w.EndIdent()
 		w.P("}")
 		w.EndIdent()
@@ -313,6 +325,7 @@ func NewMock%s%s(t interface {
 		w.P("fun func%s", f.Signature())
 		w.P("expectedCalled int")
 		w.P("called int")
+		w.P("mutex sync.Mutex")
 		w.EndIdent()
 		w.P("}")
 		w.P("_newExpected.fun = func%s { return }", f.Signature())
@@ -477,6 +490,7 @@ func NewMock%s%s(t interface {
 		w.P("fun func%s", f.Signature())
 		w.P("expectedCalled int")
 		w.P("called int")
+		w.P("mutex sync.Mutex")
 		w.EndIdent()
 		w.P("}")
 		w.P("then func() *%s", whenStructRef)

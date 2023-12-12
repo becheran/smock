@@ -8,6 +8,7 @@ import (
 	io "io"
 	os "os"
 	reflect "reflect"
+	sync "sync"
 	testpackage "github.com/test/testpackage"
 )
 
@@ -52,18 +53,21 @@ type MockInheritOwn struct {
 		Helper()
 	}
 	
-	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 testpackage.MyType); expectedCalled int; called int}}
-	vUseStdType []*struct{validateArgs func(fi os.FileInfo) bool; expected []*struct{fun func(fi os.FileInfo) (r0 io.Reader); expectedCalled int; called int}}
+	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
+	vUseStdType []*struct{validateArgs func(fi os.FileInfo) bool; expected []*struct{fun func(fi os.FileInfo) (r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockInheritOwn) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun()
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -76,10 +80,13 @@ func (_this *MockInheritOwn) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(fi)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -134,6 +141,7 @@ func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeWhenWithTimes {
 		fun func() (r0 testpackage.MyType)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func() (r0 testpackage.MyType) { return }
 	defaultExpected.expectedCalled = 1
@@ -144,6 +152,7 @@ func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeWhenWithTimes {
 			fun func() (r0 testpackage.MyType)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -154,6 +163,7 @@ func (_this *MockInheritOwnWhen) RetType() *MockInheritOwnRetTypeWhenWithTimes {
 			fun func() (r0 testpackage.MyType)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func() (r0 testpackage.MyType) { return }
 		_newExpected.expectedCalled = 1
@@ -187,6 +197,7 @@ type MockInheritOwnRetTypeWhen struct {
 		fun func() (r0 testpackage.MyType)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritOwnRetTypeWhen
 	t interface {
@@ -237,6 +248,7 @@ func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeExpectWit
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
 	defaultExpected.expectedCalled = 1
@@ -247,6 +259,7 @@ func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeExpectWit
 			fun func(fi os.FileInfo) (r0 io.Reader)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -257,6 +270,7 @@ func (_this *MockInheritOwnWhen) UseStdType() *MockInheritOwnUseStdTypeExpectWit
 			fun func(fi os.FileInfo) (r0 io.Reader)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
 		_newExpected.expectedCalled = 1
@@ -321,6 +335,7 @@ type MockInheritOwnUseStdTypeWhen struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritOwnUseStdTypeWhen
 	t interface {

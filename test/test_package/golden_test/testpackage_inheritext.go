@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	sync "sync"
 	testpackage "github.com/test/testpackage"
 )
 
@@ -57,19 +58,22 @@ type MockInheritExt struct {
 		Helper()
 	}
 	
-	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 error); expectedCalled int; called int}}
-	vRead []*struct{validateArgs func(p []byte) bool; expected []*struct{fun func(p []byte) (n int, err error); expectedCalled int; called int}}
-	vSeek []*struct{validateArgs func(offset int64, whence int) bool; expected []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); expectedCalled int; called int}}
+	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vRead []*struct{validateArgs func(p []byte) bool; expected []*struct{fun func(p []byte) (n int, err error); expectedCalled int; called int; mutex sync.Mutex}}
+	vSeek []*struct{validateArgs func(offset int64, whence int) bool; expected []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockInheritExt) Close() (r0 error) {
 	for _, _check := range _this.vClose {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun()
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -82,10 +86,13 @@ func (_this *MockInheritExt) Read(p []byte) (n int, err error) {
 	for _, _check := range _this.vRead {
 		if _check.validateArgs == nil || _check.validateArgs(p) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(p)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -98,10 +105,13 @@ func (_this *MockInheritExt) Seek(offset int64, whence int) (r0 int64, r1 error)
 	for _, _check := range _this.vSeek {
 		if _check.validateArgs == nil || _check.validateArgs(offset, whence) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(offset, whence)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -156,6 +166,7 @@ func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 		fun func() (r0 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func() (r0 error) { return }
 	defaultExpected.expectedCalled = 1
@@ -166,6 +177,7 @@ func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 			fun func() (r0 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -176,6 +188,7 @@ func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 			fun func() (r0 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func() (r0 error) { return }
 		_newExpected.expectedCalled = 1
@@ -209,6 +222,7 @@ type MockInheritExtCloseWhen struct {
 		fun func() (r0 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritExtCloseWhen
 	t interface {
@@ -259,6 +273,7 @@ func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 		fun func(p []byte) (n int, err error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(p []byte) (n int, err error) { return }
 	defaultExpected.expectedCalled = 1
@@ -269,6 +284,7 @@ func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 			fun func(p []byte) (n int, err error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -279,6 +295,7 @@ func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 			fun func(p []byte) (n int, err error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(p []byte) (n int, err error) { return }
 		_newExpected.expectedCalled = 1
@@ -343,6 +360,7 @@ type MockInheritExtReadWhen struct {
 		fun func(p []byte) (n int, err error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritExtReadWhen
 	t interface {
@@ -393,6 +411,7 @@ func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 	defaultExpected.expectedCalled = 1
@@ -403,6 +422,7 @@ func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 			fun func(offset int64, whence int) (r0 int64, r1 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -413,6 +433,7 @@ func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 			fun func(offset int64, whence int) (r0 int64, r1 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 		_newExpected.expectedCalled = 1
@@ -477,6 +498,7 @@ type MockInheritExtSeekWhen struct {
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritExtSeekWhen
 	t interface {

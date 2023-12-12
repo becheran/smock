@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	sync "sync"
 )
 
 // NewMockWithTypes creates a new mock object which implements the corresponding interface.
@@ -46,18 +47,21 @@ type MockWithTypes[T any, B any] struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func(a T, b T) bool; expected []*struct{fun func(a T, b T) (r0 B); expectedCalled int; called int}}
-	vEmpty []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int}}
+	vFoo []*struct{validateArgs func(a T, b T) bool; expected []*struct{fun func(a T, b T) (r0 B); expectedCalled int; called int; mutex sync.Mutex}}
+	vEmpty []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockWithTypes[T, B]) Foo(a T, b T) (r0 B) {
 	for _, _check := range _this.vFoo {
 		if _check.validateArgs == nil || _check.validateArgs(a, b) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(a, b)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -70,11 +74,14 @@ func (_this *MockWithTypes[T, B]) Empty() {
 	for _, _check := range _this.vEmpty {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					_exp.fun()
 					return
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -128,6 +135,7 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 		fun func(a T, b T) (r0 B)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(a T, b T) (r0 B) { return }
 	defaultExpected.expectedCalled = 1
@@ -138,6 +146,7 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 			fun func(a T, b T) (r0 B)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -148,6 +157,7 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 			fun func(a T, b T) (r0 B)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(a T, b T) (r0 B) { return }
 		_newExpected.expectedCalled = 1
@@ -212,6 +222,7 @@ type MockWithTypesFooWhen[T any, B any] struct {
 		fun func(a T, b T) (r0 B)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockWithTypesFooWhen[T, B]
 	t interface {
@@ -262,6 +273,7 @@ func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T
 		fun func()
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func() {}
 	defaultExpected.expectedCalled = 1
@@ -272,6 +284,7 @@ func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T
 			fun func()
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -282,6 +295,7 @@ func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T
 			fun func()
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func() { return }
 		_newExpected.expectedCalled = 1
@@ -315,6 +329,7 @@ type MockWithTypesEmptyWhen[T any, B any] struct {
 		fun func()
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockWithTypesEmptyWhen[T, B]
 	t interface {

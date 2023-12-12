@@ -8,6 +8,7 @@ import (
 	io "io"
 	os "os"
 	reflect "reflect"
+	sync "sync"
 	testpackage "github.com/test/testpackage"
 )
 
@@ -80,22 +81,25 @@ type MockInheritMultiple struct {
 		Helper()
 	}
 	
-	vOwn []*struct{validateArgs func(i0 int, i1 string) bool; expected []*struct{fun func(i0 int, i1 string) (r0 int, r1 string); expectedCalled int; called int}}
-	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 testpackage.MyType); expectedCalled int; called int}}
-	vUseStdType []*struct{validateArgs func(fi os.FileInfo) bool; expected []*struct{fun func(fi os.FileInfo) (r0 io.Reader); expectedCalled int; called int}}
-	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 error); expectedCalled int; called int}}
-	vRead []*struct{validateArgs func(p []byte) bool; expected []*struct{fun func(p []byte) (n int, err error); expectedCalled int; called int}}
-	vSeek []*struct{validateArgs func(offset int64, whence int) bool; expected []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); expectedCalled int; called int}}
+	vOwn []*struct{validateArgs func(i0 int, i1 string) bool; expected []*struct{fun func(i0 int, i1 string) (r0 int, r1 string); expectedCalled int; called int; mutex sync.Mutex}}
+	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
+	vUseStdType []*struct{validateArgs func(fi os.FileInfo) bool; expected []*struct{fun func(fi os.FileInfo) (r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
+	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (r0 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vRead []*struct{validateArgs func(p []byte) bool; expected []*struct{fun func(p []byte) (n int, err error); expectedCalled int; called int; mutex sync.Mutex}}
+	vSeek []*struct{validateArgs func(offset int64, whence int) bool; expected []*struct{fun func(offset int64, whence int) (r0 int64, r1 error); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockInheritMultiple) Own(i0 int, i1 string) (r0 int, r1 string) {
 	for _, _check := range _this.vOwn {
 		if _check.validateArgs == nil || _check.validateArgs(i0, i1) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(i0, i1)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -108,10 +112,13 @@ func (_this *MockInheritMultiple) RetType() (r0 testpackage.MyType) {
 	for _, _check := range _this.vRetType {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun()
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -124,10 +131,13 @@ func (_this *MockInheritMultiple) UseStdType(fi os.FileInfo) (r0 io.Reader) {
 	for _, _check := range _this.vUseStdType {
 		if _check.validateArgs == nil || _check.validateArgs(fi) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(fi)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -140,10 +150,13 @@ func (_this *MockInheritMultiple) Close() (r0 error) {
 	for _, _check := range _this.vClose {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun()
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -156,10 +169,13 @@ func (_this *MockInheritMultiple) Read(p []byte) (n int, err error) {
 	for _, _check := range _this.vRead {
 		if _check.validateArgs == nil || _check.validateArgs(p) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(p)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -172,10 +188,13 @@ func (_this *MockInheritMultiple) Seek(offset int64, whence int) (r0 int64, r1 e
 	for _, _check := range _this.vSeek {
 		if _check.validateArgs == nil || _check.validateArgs(offset, whence) {
 			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
+					_exp.mutex.Unlock()
 					return _exp.fun(offset, whence)
 				}
+				_exp.mutex.Unlock()
 			}
 		}
 	}
@@ -230,6 +249,7 @@ func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTim
 		fun func(i0 int, i1 string) (r0 int, r1 string)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(i0 int, i1 string) (r0 int, r1 string) { return }
 	defaultExpected.expectedCalled = 1
@@ -240,6 +260,7 @@ func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTim
 			fun func(i0 int, i1 string) (r0 int, r1 string)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -250,6 +271,7 @@ func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTim
 			fun func(i0 int, i1 string) (r0 int, r1 string)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(i0 int, i1 string) (r0 int, r1 string) { return }
 		_newExpected.expectedCalled = 1
@@ -314,6 +336,7 @@ type MockInheritMultipleOwnWhen struct {
 		fun func(i0 int, i1 string) (r0 int, r1 string)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleOwnWhen
 	t interface {
@@ -364,6 +387,7 @@ func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenW
 		fun func() (r0 testpackage.MyType)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func() (r0 testpackage.MyType) { return }
 	defaultExpected.expectedCalled = 1
@@ -374,6 +398,7 @@ func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenW
 			fun func() (r0 testpackage.MyType)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -384,6 +409,7 @@ func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenW
 			fun func() (r0 testpackage.MyType)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func() (r0 testpackage.MyType) { return }
 		_newExpected.expectedCalled = 1
@@ -417,6 +443,7 @@ type MockInheritMultipleRetTypeWhen struct {
 		fun func() (r0 testpackage.MyType)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleRetTypeWhen
 	t interface {
@@ -467,6 +494,7 @@ func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTyp
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
 	defaultExpected.expectedCalled = 1
@@ -477,6 +505,7 @@ func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTyp
 			fun func(fi os.FileInfo) (r0 io.Reader)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -487,6 +516,7 @@ func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTyp
 			fun func(fi os.FileInfo) (r0 io.Reader)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(fi os.FileInfo) (r0 io.Reader) { return }
 		_newExpected.expectedCalled = 1
@@ -551,6 +581,7 @@ type MockInheritMultipleUseStdTypeWhen struct {
 		fun func(fi os.FileInfo) (r0 io.Reader)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleUseStdTypeWhen
 	t interface {
@@ -601,6 +632,7 @@ func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithT
 		fun func() (r0 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func() (r0 error) { return }
 	defaultExpected.expectedCalled = 1
@@ -611,6 +643,7 @@ func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithT
 			fun func() (r0 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -621,6 +654,7 @@ func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithT
 			fun func() (r0 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func() (r0 error) { return }
 		_newExpected.expectedCalled = 1
@@ -654,6 +688,7 @@ type MockInheritMultipleCloseWhen struct {
 		fun func() (r0 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleCloseWhen
 	t interface {
@@ -704,6 +739,7 @@ func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithT
 		fun func(p []byte) (n int, err error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(p []byte) (n int, err error) { return }
 	defaultExpected.expectedCalled = 1
@@ -714,6 +750,7 @@ func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithT
 			fun func(p []byte) (n int, err error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -724,6 +761,7 @@ func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithT
 			fun func(p []byte) (n int, err error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(p []byte) (n int, err error) { return }
 		_newExpected.expectedCalled = 1
@@ -788,6 +826,7 @@ type MockInheritMultipleReadWhen struct {
 		fun func(p []byte) (n int, err error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleReadWhen
 	t interface {
@@ -838,6 +877,7 @@ func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithT
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	defaultExpected.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 	defaultExpected.expectedCalled = 1
@@ -848,6 +888,7 @@ func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithT
 			fun func(offset int64, whence int) (r0 int64, r1 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
@@ -858,6 +899,7 @@ func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithT
 			fun func(offset int64, whence int) (r0 int64, r1 error)
 			expectedCalled int
 			called int
+			mutex sync.Mutex
 		}
 		_newExpected.fun = func(offset int64, whence int) (r0 int64, r1 error) { return }
 		_newExpected.expectedCalled = 1
@@ -922,6 +964,7 @@ type MockInheritMultipleSeekWhen struct {
 		fun func(offset int64, whence int) (r0 int64, r1 error)
 		expectedCalled int
 		called int
+		mutex sync.Mutex
 	}
 	then func() *MockInheritMultipleSeekWhen
 	t interface {

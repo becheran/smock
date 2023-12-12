@@ -2,6 +2,7 @@ package testpackage_test
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/becheran/smock/match"
@@ -228,6 +229,21 @@ func TestThenWithExpect(t *testing.T) {
 	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
 	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
 	assert.Equal(t, "Three", m.Bar(0, "", struct{}{}, nil, nil, nil))
+}
+
+func TestCallThreadSafe(t *testing.T) {
+	m := testpackage_mock.NewMockWithLambda[string](t)
+
+	m.WHEN().Foo().Times(2)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		m.Foo(0, "")
+		wg.Done()
+	}()
+	m.Foo(0, "")
+	wg.Wait()
 }
 
 type Tester struct {
