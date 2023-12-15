@@ -194,9 +194,6 @@ func (ir InterfaceResult) ValidateReadyForGenerate() error {
 	if ir.PackageName == "" {
 		return fmt.Errorf("packageName must be set")
 	}
-	if len(ir.Imports) < 1 {
-		return fmt.Errorf("expected at least one import")
-	}
 	for _, i := range ir.Imports {
 		if i.Path == "" {
 			return fmt.Errorf("import path must be set")

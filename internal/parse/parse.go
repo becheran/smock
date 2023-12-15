@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"log"
 	"path"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/becheran/smock/internal/gomod"
 	"github.com/becheran/smock/internal/logger"
 	"github.com/becheran/smock/internal/model"
 	"github.com/becheran/smock/internal/pathhelper"
@@ -17,11 +19,19 @@ import (
 func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface '%s' in package '%s'", interfaceName, pkg.Name)
 
-	for path, file := range pkg.Files {
-		i, err = ParseInterfaceInFile(file, interfaceName, path)
+	for filePath, file := range pkg.Files {
+		importPath := ImportPath(filePath)
+		logger.Printf("Add own package %s to imports", importPath)
+		file.Imports = append(file.Imports, &ast.ImportSpec{
+			Name: &ast.Ident{Name: pkg.Name},
+			Path: &ast.BasicLit{Value: importPath},
+		})
+
+		i, err = ParseInterfaceInFile(file, interfaceName, filePath)
 		if err == nil {
 			return i, nil
 		}
+		logger.Printf("Failed to parse interface in file %s. %s", filePath, err)
 	}
 	return model.InterfaceResult{}, fmt.Errorf("interface '%s' not found in package '%s'", interfaceName, pkg.Name)
 }
@@ -196,9 +206,6 @@ func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 	for usedImport := range identResolver.UsedImports {
 		logger.Printf("Add used import '%s' to result", usedImport)
 
-		if usedImport == i.PackageName {
-			continue
-		}
 		var foundImport *model.Import
 		for _, astImp := range imports {
 			imp := model.ImportFromAst(astImp)
@@ -311,8 +318,8 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 		if !tr.isGenericIdentifier(identType) {
 			if t.IsExported() {
 				identType = tr.PackageName + "." + identType
+				tr.UsedImports[tr.PackageName] = struct{}{}
 			}
-			tr.UsedImports[tr.PackageName] = struct{}{}
 		}
 	case *ast.SelectorExpr:
 		if xIdent, ok := t.X.(*ast.Ident); ok {
@@ -431,4 +438,12 @@ func GetTypeSpec(decl ast.Decl) (ts *ast.TypeSpec, err error) {
 		return nil, fmt.Errorf("expected ts name not to be nil")
 	}
 	return ts, nil
+}
+
+func ImportPath(file string) string {
+	modInfo, err := gomod.FindMod(file)
+	if err != nil {
+		log.Fatalf("Failed to find module. %s", err)
+	}
+	return modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(file)))
 }

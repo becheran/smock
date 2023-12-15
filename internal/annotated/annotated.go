@@ -1,6 +1,7 @@
 package annotated
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
@@ -8,19 +9,14 @@ import (
 	"path"
 
 	"github.com/becheran/smock/internal/generate"
-	"github.com/becheran/smock/internal/gomod"
 	"github.com/becheran/smock/internal/logger"
-	"github.com/becheran/smock/internal/model"
 	"github.com/becheran/smock/internal/parse"
 	"github.com/becheran/smock/internal/pathhelper"
 )
 
 // GenerateMocks for interface at file and line
 func GenerateMocks(file string, line int) (mockFile string) {
-	importPathCh := make(chan string)
-	go func() {
-		importPathCh <- importPath(file)
-	}()
+	importPath := parse.ImportPath(file)
 	fset := token.NewFileSet()
 	logger.Printf("Parse file '%s'\n", file)
 	f, err := parser.ParseFile(fset, file, nil, 0)
@@ -28,14 +24,17 @@ func GenerateMocks(file string, line int) (mockFile string) {
 		log.Fatalf("Failed to parse file '%s'. %s", file, err)
 	}
 
+	// TODO mod name differ dir name!
+	logger.Printf("Add own package %s to imports", importPath)
+	f.Imports = append(f.Imports, &ast.ImportSpec{
+		Name: &ast.Ident{Name: f.Name.Name},
+		Path: &ast.BasicLit{Value: importPath},
+	})
+
 	i, err := parse.ParseInterfaceAtPosition(fset, f, line)
 	if err != nil {
 		log.Fatalf("Failed to parse interface. %s", err)
 	}
-
-	impPath := <-importPathCh
-	logger.Printf("Add own package %s to imports", impPath)
-	i.Imports = append(i.Imports, model.Import{Path: impPath})
 
 	mockFilePathCh := make(chan string)
 	go func() {
@@ -56,12 +55,4 @@ func GenerateMocks(file string, line int) (mockFile string) {
 		log.Fatalf("Failed to write mock file '%s'. %s", mockFilePath, err)
 	}
 	return mockFilePath
-}
-
-func importPath(file string) string {
-	modInfo, err := gomod.FindMod(file)
-	if err != nil {
-		log.Fatalf("Failed to find module. %s", err)
-	}
-	return modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(file)))
 }

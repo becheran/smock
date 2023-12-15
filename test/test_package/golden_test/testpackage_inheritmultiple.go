@@ -12,9 +12,6 @@ import (
 	testpackage "github.com/test/testpackage"
 )
 
-// MockInheritMultiple must implement interface testpackage.InheritMultiple
-var _ testpackage.InheritMultiple = &MockInheritMultiple{}
-
 // NewMockInheritMultiple creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockInheritMultiple(t interface {

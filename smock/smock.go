@@ -2,6 +2,7 @@
 package smock
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
@@ -13,7 +14,6 @@ import (
 	"github.com/becheran/smock/internal/generate"
 	"github.com/becheran/smock/internal/gomod"
 	"github.com/becheran/smock/internal/logger"
-	"github.com/becheran/smock/internal/model"
 	"github.com/becheran/smock/internal/parse"
 	"github.com/becheran/smock/internal/pathhelper"
 	"github.com/becheran/wildmatch-go"
@@ -156,6 +156,15 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 						if err != nil {
 							continue
 						}
+
+						importPath := modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(fileName)))
+						// TODO mod name differ dir name!
+						logger.Printf("Add own package %s to imports", importPath)
+						file.Imports = append(file.Imports, &ast.ImportSpec{
+							Name: &ast.Ident{Name: pkg.Name},
+							Path: &ast.BasicLit{Value: importPath},
+						})
+
 						i, err := parse.ParseInterface(ts, pkg.Name, fileName, file.Imports)
 						if err != nil {
 							continue
@@ -166,10 +175,6 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 							logger.Println("Skip interface", i.Name)
 							continue
 						}
-
-						importPath := modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(fileName)))
-						logger.Printf("Add own package %s to imports", importPath)
-						i.Imports = append(i.Imports, model.Import{Path: importPath})
 
 						m, err := generate.GenerateMock(i)
 						if err != nil {

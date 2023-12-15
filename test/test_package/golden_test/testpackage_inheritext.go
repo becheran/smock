@@ -7,11 +7,7 @@ import (
 	fmt "fmt"
 	reflect "reflect"
 	sync "sync"
-	testpackage "github.com/test/testpackage"
 )
-
-// MockInheritExt must implement interface testpackage.InheritExt
-var _ testpackage.InheritExt = &MockInheritExt{}
 
 // NewMockInheritExt creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   

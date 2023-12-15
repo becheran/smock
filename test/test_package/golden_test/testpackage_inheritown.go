@@ -12,9 +12,6 @@ import (
 	testpackage "github.com/test/testpackage"
 )
 
-// MockInheritOwn must implement interface testpackage.InheritOwn
-var _ testpackage.InheritOwn = &MockInheritOwn{}
-
 // NewMockInheritOwn creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
 func NewMockInheritOwn(t interface {

@@ -2,7 +2,6 @@ package generate
 
 import (
 	"fmt"
-	"go/token"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -17,9 +16,6 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	if err := res.ValidateReadyForGenerate(); err != nil {
 		return nil, err
 	}
-
-	hasTypes := len(res.Types) > 0
-	assertImplements := !(hasTypes || !token.IsExported(res.Name))
 
 	mockedStructName := fmt.Sprintf("Mock%s", res.Name)
 	mockedStructWithTypeIdentifier := fmt.Sprintf("%s%s", mockedStructName, res.Types.ListIdentifier())
@@ -52,16 +48,12 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	reflectAlreadyImported := false
 	syncAlreadyImported := false
 	for _, i := range res.Imports {
-		if !assertImplements && i.ImportName() == res.PackageName {
-			continue
-		}
-		if i.ImportName() == "fmt" {
+		switch i.ImportName() {
+		case "fmt":
 			fmtAlreadyImported = true
-		}
-		if i.ImportName() == "reflect" {
+		case "reflect":
 			reflectAlreadyImported = true
-		}
-		if i.ImportName() == "sync" {
+		case "sync":
 			syncAlreadyImported = true
 		}
 	}
@@ -81,23 +73,12 @@ func GenerateMock(res model.InterfaceResult) (mock []byte, err error) {
 	w.P("import (")
 	w.Ident()
 	for _, i := range res.Imports {
-		if !assertImplements && i.ImportName() == res.PackageName {
-			continue
-		}
 		w.P("%s", i)
 		logger.Printf("Use import: %s", i)
 	}
 	w.EndIdent()
 	w.P(")")
 	w.P("")
-
-	// Do not validate when generics are used.
-	// It is complicated to retrieve a valid type and assert that one concrete type implements the interface.
-	if assertImplements {
-		w.P("// %s must implement interface %s.%s", mockedStructName, res.PackageName, res.Name)
-		w.P("var _ %s.%s = &%s{}", res.PackageName, res.Name, mockedStructName)
-		w.P("")
-	}
 
 	w.P(`// NewMock%s creates a new mock object which implements the corresponding interface.
 // All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
