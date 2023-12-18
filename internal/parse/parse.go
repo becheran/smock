@@ -16,16 +16,20 @@ import (
 	"github.com/becheran/smock/internal/pathhelper"
 )
 
+var fileMutex sync.Mutex
+
 func ParseInterfaceInPackage(pkg *ast.Package, interfaceName string) (i model.InterfaceResult, err error) {
 	logger.Printf("Parse interface '%s' in package '%s'", interfaceName, pkg.Name)
 
 	for filePath, file := range pkg.Files {
 		importPath := ImportPath(filePath)
 		logger.Printf("Add own package %s to imports", importPath)
+		fileMutex.Lock()
 		file.Imports = append(file.Imports, &ast.ImportSpec{
 			Name: &ast.Ident{Name: pkg.Name},
 			Path: &ast.BasicLit{Value: importPath},
 		})
+		fileMutex.Unlock()
 
 		i, err = ParseInterfaceInFile(file, interfaceName, filePath)
 		if err == nil {
@@ -44,7 +48,10 @@ func ParseInterfaceInFile(file *ast.File, interfaceName, path string) (i model.I
 			continue
 		}
 		if ts.Name.Name == interfaceName {
-			return ParseInterface(ts, file.Name.Name, path, file.Imports)
+			fileMutex.Lock()
+			imports := file.Imports
+			fileMutex.Unlock()
+			return ParseInterface(ts, file.Name.Name, path, imports)
 		}
 	}
 	return model.InterfaceResult{}, fmt.Errorf("interface %s not found in file %s", interfaceName, file.Name)
