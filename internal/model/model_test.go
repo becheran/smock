@@ -10,10 +10,10 @@ import (
 
 func TestMethodSignature(t *testing.T) {
 	assert.Equal(t, "()", model.Method{}.Signature())
-	assert.Equal(t, "() (foo string)", model.Method{
+	assert.Equal(t, "() (_foo string)", model.Method{
 		Results: model.IdentList{{Name: "foo", Type: "string"}},
 	}.Signature())
-	assert.Equal(t, fmt.Sprintf("(%s0 int, %s1 bool) (%s0 int)", model.IdentTypeInput, model.IdentTypeInput, model.IdentTypeResult), model.Method{
+	assert.Equal(t, fmt.Sprintf("(_%s0 int, _%s1 bool) (_%s0 int)", model.IdentTypeInput, model.IdentTypeInput, model.IdentTypeResult), model.Method{
 		Params:  model.IdentList{{Type: "int"}, {Type: "bool"}},
 		Results: model.IdentList{{Type: "int"}},
 	}.Signature())

@@ -47,26 +47,26 @@ type MockWithTypes[T any, B any] struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func(a T, b T) bool; expected []*struct{fun func(a T, b T) (r0 B); expectedCalled int; called int; mutex sync.Mutex}}
+	vFoo []*struct{validateArgs func(_a T, _b T) bool; expected []*struct{fun func(_a T, _b T) (_r0 B); expectedCalled int; called int; mutex sync.Mutex}}
 	vEmpty []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
-func (_this *MockWithTypes[T, B]) Foo(a T, b T) (r0 B) {
+func (_this *MockWithTypes[T, B]) Foo(_a T, _b T) (_r0 B) {
 	for _, _check := range _this.vFoo {
-		if _check.validateArgs == nil || _check.validateArgs(a, b) {
+		if _check.validateArgs == nil || _check.validateArgs(_a, _b) {
 			for _ctr, _exp := range _check.expected {
 				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
 					_exp.mutex.Unlock()
-					return _exp.fun(a, b)
+					return _exp.fun(_a, _b)
 				}
 				_exp.mutex.Unlock()
 			}
 		}
 	}
 	_this.t.Helper()
-	_this.unexpectedCall("Foo", a, b)
+	_this.unexpectedCall("Foo", _a, _b)
 	return
 }
 
@@ -132,18 +132,18 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 		}
 	}
 	var defaultExpected struct {
-		fun func(a T, b T) (r0 B)
+		fun func(_a T, _b T) (_r0 B)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func(a T, b T) (r0 B) { return }
+	defaultExpected.fun = func(_a T, _b T) (_r0 B) { return }
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
-		validateArgs func(a T, b T) bool
+		validateArgs func(_a T, _b T) bool
 		expected []*struct {
-			fun func(a T, b T) (r0 B)
+			fun func(_a T, _b T) (_r0 B)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -154,12 +154,12 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 	var _then func() *MockWithTypesFooWhen[T, B]
 	_then = func() *MockWithTypesFooWhen[T, B] {
 		var _newExpected struct {
-			fun func(a T, b T) (r0 B)
+			fun func(_a T, _b T) (_r0 B)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func(a T, b T) (r0 B) { return }
+		_newExpected.fun = func(_a T, _b T) (_r0 B) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -192,7 +192,7 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 
 type MockWithTypesFooExpect[T any, B any] struct {
 	*MockWithTypesFooWhen[T, B]
-	validateArgs *func(a T, b T) bool
+	validateArgs *func(_a T, _b T) bool
 	times *MockWithTypesTimes[*MockWithTypesFooWhen[T, B]]
 }
 
@@ -200,10 +200,10 @@ type MockWithTypesFooExpect[T any, B any] struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockWithTypesFooExpect[T, B]) Expect(a func(T) bool, b func(T) bool) *MockWithTypesFooWhenWithTimes[T, B] {
-	if !(a == nil && b == nil) {
-		*_this.validateArgs = func(_a T, _b T) bool {
-			return (a == nil || a(_a)) && (b == nil || b(_b))
+func (_this *MockWithTypesFooExpect[T, B]) Expect(_a func(T) bool, _b func(T) bool) *MockWithTypesFooWhenWithTimes[T, B] {
+	if !(_a == nil && _b == nil) {
+		*_this.validateArgs = func(__a T, __b T) bool {
+			return (_a == nil || _a(__a)) && (_b == nil || _b(__b))
 		}
 	}
 	return &MockWithTypesFooWhenWithTimes[T, B] {
@@ -219,7 +219,7 @@ type MockWithTypesFooExpectWithTimes[T any, B any] struct {
 
 type MockWithTypesFooWhen[T any, B any] struct {
 	expected []*struct {
-		fun func(a T, b T) (r0 B)
+		fun func(_a T, _b T) (_r0 B)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -237,8 +237,8 @@ type MockWithTypesFooWhenWithTimes[T any, B any] struct {
 }
 
 // Return the provided values when called
-func (_this *MockWithTypesFooWhen[T, B]) Return(r0 B) *MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
-	_this.expected[len(_this.expected) -1].fun = func(T, T) (B) { return r0 }
+func (_this *MockWithTypesFooWhen[T, B]) Return(_r0 B) *MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
+	_this.expected[len(_this.expected) -1].fun = func(T, T) (B) { return _r0 }
 	return &MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
 		then: _this.then,
@@ -248,7 +248,7 @@ func (_this *MockWithTypesFooWhen[T, B]) Return(r0 B) *MockWithTypesTimes[*MockW
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockWithTypesFooWhen[T, B]) Do(do func(a T, b T) (r0 B)) *MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
+func (_this *MockWithTypesFooWhen[T, B]) Do(do func(_a T, _b T) (_r0 B)) *MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockWithTypesTimes[*MockWithTypesFooWhen[T, B]] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,

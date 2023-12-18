@@ -46,7 +46,7 @@ func (i IdentList) IdentWithTypeStringAndPrefix(identPrefix IdentType, prefix st
 }
 
 func (i IdentList) IdentWithTypeString(identPrefix IdentType) (res string) {
-	return i.IdentWithTypeStringAndPrefix(identPrefix, "")
+	return i.IdentWithTypeStringAndPrefix(identPrefix, "_")
 }
 
 func (i IdentList) TypeString(identPrefix IdentType) (res string) {
@@ -65,6 +65,7 @@ func (i IdentList) IdentString(identPrefix IdentType, resolveLambda bool) (res s
 		if name == "" {
 			name = fmt.Sprintf("%s%d", identPrefix, idx)
 		}
+		name = "_" + name
 		res += name
 		if resolveLambda && strings.HasPrefix(ident.Type, "...") {
 			res += "..."

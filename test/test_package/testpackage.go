@@ -2,6 +2,7 @@ package testpackage
 
 import (
 	"io"
+	"net/url"
 	"os"
 )
 
@@ -49,4 +50,10 @@ type WithLambda[T comparable] interface {
 //go:generate smock -debug
 type unexported interface {
 	Foo()
+}
+
+//go:generate smock -debug
+type UseUrlWithUrlName interface {
+	InUrl(url url.URL, fun func(url url.URL))
+	RetUrl() (url url.URL, fun func(url url.URL))
 }

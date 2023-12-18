@@ -383,12 +383,14 @@ func NewMock%s%s(t interface {
 				typeStr := arg.Type
 				lambdaPref := ""
 				if strings.HasPrefix(arg.Type, "...") {
-					lambdaFieldName = name
+					lambdaFieldName = "_" + name
 					typeStr = strings.TrimPrefix(typeStr, "...")
 					lambdaPref = "..."
 				}
 				if name == "" {
 					name = fmt.Sprintf("_%d", idx)
+				} else {
+					name = "_" + name
 				}
 				args += fmt.Sprintf("%s %sfunc(%s) bool", name, lambdaPref, typeStr)
 				if idx+1 < len(f.Params) {
@@ -414,11 +416,13 @@ func NewMock%s%s(t interface {
 				if name == "" {
 					name = fmt.Sprintf("_%d", idx)
 					input = fmt.Sprintf("i%d", idx)
+				} else {
+					name = "_" + name
 				}
 				if strings.HasPrefix(arg.Type, "...") {
 					input += "..."
 				}
-				matchString += fmt.Sprintf("(%s == nil || %s(_%s))", name, name, input)
+				matchString += fmt.Sprintf("(%s == nil || %s(__%s))", name, name, input)
 				checkAllNil += fmt.Sprintf("%s == nil", name)
 				if idx+1 < len(f.Params) {
 					matchString += " && "
@@ -427,7 +431,7 @@ func NewMock%s%s(t interface {
 			}
 			w.P("if !(%s) {", checkAllNil)
 			w.Ident()
-			w.P("*_this.validateArgs = func(%s) bool {", f.Params.IdentWithTypeStringAndPrefix(model.IdentTypeInput, "_"))
+			w.P("*_this.validateArgs = func(%s) bool {", f.Params.IdentWithTypeStringAndPrefix(model.IdentTypeInput, "__"))
 			w.Ident()
 			if lambdaFieldName != "" {
 				w.P("for _idx, _val := range _%s {", lambdaFieldName)

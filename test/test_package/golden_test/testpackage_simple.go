@@ -69,10 +69,10 @@ type MockSimple struct {
 	}
 	
 	vFoo []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
-	vSingleArg []*struct{validateArgs func(i0 int) bool; expected []*struct{fun func(i0 int); expectedCalled int; called int; mutex sync.Mutex}}
-	vBar []*struct{validateArgs func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool; expected []*struct{fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string); expectedCalled int; called int; mutex sync.Mutex}}
-	vBaz []*struct{validateArgs func(a int, b string) bool; expected []*struct{fun func(a int, b string) (s string); expectedCalled int; called int; mutex sync.Mutex}}
-	vFun []*struct{validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool; expected []*struct{fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()); expectedCalled int; called int; mutex sync.Mutex}}
+	vSingleArg []*struct{validateArgs func(_i0 int) bool; expected []*struct{fun func(_i0 int); expectedCalled int; called int; mutex sync.Mutex}}
+	vBar []*struct{validateArgs func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool; expected []*struct{fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string); expectedCalled int; called int; mutex sync.Mutex}}
+	vBaz []*struct{validateArgs func(_a int, _b string) bool; expected []*struct{fun func(_a int, _b string) (_s string); expectedCalled int; called int; mutex sync.Mutex}}
+	vFun []*struct{validateArgs func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool; expected []*struct{fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockSimple) Foo() {
@@ -94,15 +94,15 @@ func (_this *MockSimple) Foo() {
 	_this.unexpectedCall("Foo", )
 }
 
-func (_this *MockSimple) SingleArg(i0 int) {
+func (_this *MockSimple) SingleArg(_i0 int) {
 	for _, _check := range _this.vSingleArg {
-		if _check.validateArgs == nil || _check.validateArgs(i0) {
+		if _check.validateArgs == nil || _check.validateArgs(_i0) {
 			for _ctr, _exp := range _check.expected {
 				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
 					_exp.mutex.Unlock()
-					_exp.fun(i0)
+					_exp.fun(_i0)
 					return
 				}
 				_exp.mutex.Unlock()
@@ -110,63 +110,63 @@ func (_this *MockSimple) SingleArg(i0 int) {
 		}
 	}
 	_this.t.Helper()
-	_this.unexpectedCall("SingleArg", i0)
+	_this.unexpectedCall("SingleArg", _i0)
 }
 
-func (_this *MockSimple) Bar(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string) {
+func (_this *MockSimple) Bar(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string) {
 	for _, _check := range _this.vBar {
-		if _check.validateArgs == nil || _check.validateArgs(a, b, c, d, e, f) {
+		if _check.validateArgs == nil || _check.validateArgs(_a, _b, _c, _d, _e, _f) {
 			for _ctr, _exp := range _check.expected {
 				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
 					_exp.mutex.Unlock()
-					return _exp.fun(a, b, c, d, e, f)
+					return _exp.fun(_a, _b, _c, _d, _e, _f)
 				}
 				_exp.mutex.Unlock()
 			}
 		}
 	}
 	_this.t.Helper()
-	_this.unexpectedCall("Bar", a, b, c, d, e, f)
+	_this.unexpectedCall("Bar", _a, _b, _c, _d, _e, _f)
 	return
 }
 
-func (_this *MockSimple) Baz(a int, b string) (s string) {
+func (_this *MockSimple) Baz(_a int, _b string) (_s string) {
 	for _, _check := range _this.vBaz {
-		if _check.validateArgs == nil || _check.validateArgs(a, b) {
+		if _check.validateArgs == nil || _check.validateArgs(_a, _b) {
 			for _ctr, _exp := range _check.expected {
 				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
 					_exp.mutex.Unlock()
-					return _exp.fun(a, b)
+					return _exp.fun(_a, _b)
 				}
 				_exp.mutex.Unlock()
 			}
 		}
 	}
 	_this.t.Helper()
-	_this.unexpectedCall("Baz", a, b)
+	_this.unexpectedCall("Baz", _a, _b)
 	return
 }
 
-func (_this *MockSimple) Fun(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) {
+func (_this *MockSimple) Fun(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()) {
 	for _, _check := range _this.vFun {
-		if _check.validateArgs == nil || _check.validateArgs(a, b) {
+		if _check.validateArgs == nil || _check.validateArgs(_a, _b) {
 			for _ctr, _exp := range _check.expected {
 				_exp.mutex.Lock()
 				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
 					_exp.called++
 					_exp.mutex.Unlock()
-					return _exp.fun(a, b)
+					return _exp.fun(_a, _b)
 				}
 				_exp.mutex.Unlock()
 			}
 		}
 	}
 	_this.t.Helper()
-	_this.unexpectedCall("Fun", a, b)
+	_this.unexpectedCall("Fun", _a, _b)
 	return
 }
 
@@ -309,18 +309,18 @@ func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 		}
 	}
 	var defaultExpected struct {
-		fun func(i0 int)
+		fun func(_i0 int)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func(i0 int) {}
+	defaultExpected.fun = func(_i0 int) {}
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
-		validateArgs func(i0 int) bool
+		validateArgs func(_i0 int) bool
 		expected []*struct {
-			fun func(i0 int)
+			fun func(_i0 int)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -331,12 +331,12 @@ func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 	var _then func() *MockSimpleSingleArgWhen
 	_then = func() *MockSimpleSingleArgWhen {
 		var _newExpected struct {
-			fun func(i0 int)
+			fun func(_i0 int)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func(i0 int) { return }
+		_newExpected.fun = func(_i0 int) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -369,7 +369,7 @@ func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 
 type MockSimpleSingleArgExpect struct {
 	*MockSimpleSingleArgWhen
-	validateArgs *func(i0 int) bool
+	validateArgs *func(_i0 int) bool
 	times *MockSimpleTimes[*MockSimpleSingleArgWhen]
 }
 
@@ -379,8 +379,8 @@ type MockSimpleSingleArgExpect struct {
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
 func (_this *MockSimpleSingleArgExpect) Expect(_0 func(int) bool) *MockSimpleSingleArgWhenWithTimes {
 	if !(_0 == nil) {
-		*_this.validateArgs = func(_i0 int) bool {
-			return (_0 == nil || _0(_i0))
+		*_this.validateArgs = func(__i0 int) bool {
+			return (_0 == nil || _0(__i0))
 		}
 	}
 	return &MockSimpleSingleArgWhenWithTimes {
@@ -396,7 +396,7 @@ type MockSimpleSingleArgExpectWithTimes struct {
 
 type MockSimpleSingleArgWhen struct {
 	expected []*struct {
-		fun func(i0 int)
+		fun func(_i0 int)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -414,7 +414,7 @@ type MockSimpleSingleArgWhenWithTimes struct {
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockSimpleSingleArgWhen) Do(do func(i0 int)) *MockSimpleTimes[*MockSimpleSingleArgWhen] {
+func (_this *MockSimpleSingleArgWhen) Do(do func(_i0 int)) *MockSimpleTimes[*MockSimpleSingleArgWhen] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockSimpleTimes[*MockSimpleSingleArgWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
@@ -436,18 +436,18 @@ func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 		}
 	}
 	var defaultExpected struct {
-		fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
+		fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string) { return }
+	defaultExpected.fun = func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string) { return }
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
-		validateArgs func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool
+		validateArgs func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool
 		expected []*struct {
-			fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
+			fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -458,12 +458,12 @@ func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 	var _then func() *MockSimpleBarWhen
 	_then = func() *MockSimpleBarWhen {
 		var _newExpected struct {
-			fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
+			fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string) { return }
+		_newExpected.fun = func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -496,7 +496,7 @@ func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 
 type MockSimpleBarExpect struct {
 	*MockSimpleBarWhen
-	validateArgs *func(a int, b string, c struct{}, d *struct{}, e any, f []byte) bool
+	validateArgs *func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool
 	times *MockSimpleTimes[*MockSimpleBarWhen]
 }
 
@@ -504,10 +504,10 @@ type MockSimpleBarExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockSimpleBarExpect) Expect(a func(int) bool, b func(string) bool, c func(struct{}) bool, d func(*struct{}) bool, e func(any) bool, f func([]byte) bool) *MockSimpleBarWhenWithTimes {
-	if !(a == nil && b == nil && c == nil && d == nil && e == nil && f == nil) {
-		*_this.validateArgs = func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool {
-			return (a == nil || a(_a)) && (b == nil || b(_b)) && (c == nil || c(_c)) && (d == nil || d(_d)) && (e == nil || e(_e)) && (f == nil || f(_f))
+func (_this *MockSimpleBarExpect) Expect(_a func(int) bool, _b func(string) bool, _c func(struct{}) bool, _d func(*struct{}) bool, _e func(any) bool, _f func([]byte) bool) *MockSimpleBarWhenWithTimes {
+	if !(_a == nil && _b == nil && _c == nil && _d == nil && _e == nil && _f == nil) {
+		*_this.validateArgs = func(__a int, __b string, __c struct{}, __d *struct{}, __e any, __f []byte) bool {
+			return (_a == nil || _a(__a)) && (_b == nil || _b(__b)) && (_c == nil || _c(__c)) && (_d == nil || _d(__d)) && (_e == nil || _e(__e)) && (_f == nil || _f(__f))
 		}
 	}
 	return &MockSimpleBarWhenWithTimes {
@@ -523,7 +523,7 @@ type MockSimpleBarExpectWithTimes struct {
 
 type MockSimpleBarWhen struct {
 	expected []*struct {
-		fun func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)
+		fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -541,8 +541,8 @@ type MockSimpleBarWhenWithTimes struct {
 }
 
 // Return the provided values when called
-func (_this *MockSimpleBarWhen) Return(r0 string) *MockSimpleTimes[*MockSimpleBarWhen] {
-	_this.expected[len(_this.expected) -1].fun = func(int, string, struct{}, *struct{}, any, []byte) (string) { return r0 }
+func (_this *MockSimpleBarWhen) Return(_r0 string) *MockSimpleTimes[*MockSimpleBarWhen] {
+	_this.expected[len(_this.expected) -1].fun = func(int, string, struct{}, *struct{}, any, []byte) (string) { return _r0 }
 	return &MockSimpleTimes[*MockSimpleBarWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
 		then: _this.then,
@@ -552,7 +552,7 @@ func (_this *MockSimpleBarWhen) Return(r0 string) *MockSimpleTimes[*MockSimpleBa
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockSimpleBarWhen) Do(do func(a int, b string, c struct{}, d *struct{}, e any, f []byte) (r0 string)) *MockSimpleTimes[*MockSimpleBarWhen] {
+func (_this *MockSimpleBarWhen) Do(do func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)) *MockSimpleTimes[*MockSimpleBarWhen] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockSimpleTimes[*MockSimpleBarWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
@@ -574,18 +574,18 @@ func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 		}
 	}
 	var defaultExpected struct {
-		fun func(a int, b string) (s string)
+		fun func(_a int, _b string) (_s string)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func(a int, b string) (s string) { return }
+	defaultExpected.fun = func(_a int, _b string) (_s string) { return }
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
-		validateArgs func(a int, b string) bool
+		validateArgs func(_a int, _b string) bool
 		expected []*struct {
-			fun func(a int, b string) (s string)
+			fun func(_a int, _b string) (_s string)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -596,12 +596,12 @@ func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 	var _then func() *MockSimpleBazWhen
 	_then = func() *MockSimpleBazWhen {
 		var _newExpected struct {
-			fun func(a int, b string) (s string)
+			fun func(_a int, _b string) (_s string)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func(a int, b string) (s string) { return }
+		_newExpected.fun = func(_a int, _b string) (_s string) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -634,7 +634,7 @@ func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 
 type MockSimpleBazExpect struct {
 	*MockSimpleBazWhen
-	validateArgs *func(a int, b string) bool
+	validateArgs *func(_a int, _b string) bool
 	times *MockSimpleTimes[*MockSimpleBazWhen]
 }
 
@@ -642,10 +642,10 @@ type MockSimpleBazExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockSimpleBazExpect) Expect(a func(int) bool, b func(string) bool) *MockSimpleBazWhenWithTimes {
-	if !(a == nil && b == nil) {
-		*_this.validateArgs = func(_a int, _b string) bool {
-			return (a == nil || a(_a)) && (b == nil || b(_b))
+func (_this *MockSimpleBazExpect) Expect(_a func(int) bool, _b func(string) bool) *MockSimpleBazWhenWithTimes {
+	if !(_a == nil && _b == nil) {
+		*_this.validateArgs = func(__a int, __b string) bool {
+			return (_a == nil || _a(__a)) && (_b == nil || _b(__b))
 		}
 	}
 	return &MockSimpleBazWhenWithTimes {
@@ -661,7 +661,7 @@ type MockSimpleBazExpectWithTimes struct {
 
 type MockSimpleBazWhen struct {
 	expected []*struct {
-		fun func(a int, b string) (s string)
+		fun func(_a int, _b string) (_s string)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -679,8 +679,8 @@ type MockSimpleBazWhenWithTimes struct {
 }
 
 // Return the provided values when called
-func (_this *MockSimpleBazWhen) Return(s string) *MockSimpleTimes[*MockSimpleBazWhen] {
-	_this.expected[len(_this.expected) -1].fun = func(int, string) (string) { return s }
+func (_this *MockSimpleBazWhen) Return(_s string) *MockSimpleTimes[*MockSimpleBazWhen] {
+	_this.expected[len(_this.expected) -1].fun = func(int, string) (string) { return _s }
 	return &MockSimpleTimes[*MockSimpleBazWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
 		then: _this.then,
@@ -690,7 +690,7 @@ func (_this *MockSimpleBazWhen) Return(s string) *MockSimpleTimes[*MockSimpleBaz
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockSimpleBazWhen) Do(do func(a int, b string) (s string)) *MockSimpleTimes[*MockSimpleBazWhen] {
+func (_this *MockSimpleBazWhen) Do(do func(_a int, _b string) (_s string)) *MockSimpleTimes[*MockSimpleBazWhen] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockSimpleTimes[*MockSimpleBazWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
@@ -712,18 +712,18 @@ func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 		}
 	}
 	var defaultExpected struct {
-		fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+		fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) { return }
+	defaultExpected.fun = func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()) { return }
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
-		validateArgs func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
+		validateArgs func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool
 		expected []*struct {
-			fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+			fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -734,12 +734,12 @@ func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 	var _then func() *MockSimpleFunWhen
 	_then = func() *MockSimpleFunWhen {
 		var _newExpected struct {
-			fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+			fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func()) { return }
+		_newExpected.fun = func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -772,7 +772,7 @@ func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 
 type MockSimpleFunExpect struct {
 	*MockSimpleFunWhen
-	validateArgs *func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) bool
+	validateArgs *func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool
 	times *MockSimpleTimes[*MockSimpleFunWhen]
 }
 
@@ -780,10 +780,10 @@ type MockSimpleFunExpect struct {
 // Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
 
 // Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
-func (_this *MockSimpleFunExpect) Expect(a func(func(func(string, string) (int, int), func(string, string) (int, int))) bool, b func(func(func(string, string) (int, int), func(string, string) (int, int))) bool) *MockSimpleFunWhenWithTimes {
-	if !(a == nil && b == nil) {
-		*_this.validateArgs = func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
-			return (a == nil || a(_a)) && (b == nil || b(_b))
+func (_this *MockSimpleFunExpect) Expect(_a func(func(func(string, string) (int, int), func(string, string) (int, int))) bool, _b func(func(func(string, string) (int, int), func(string, string) (int, int))) bool) *MockSimpleFunWhenWithTimes {
+	if !(_a == nil && _b == nil) {
+		*_this.validateArgs = func(__a func(func(string, string) (int, int), func(string, string) (int, int)), __b func(func(string, string) (int, int), func(string, string) (int, int))) bool {
+			return (_a == nil || _a(__a)) && (_b == nil || _b(__b))
 		}
 	}
 	return &MockSimpleFunWhenWithTimes {
@@ -799,7 +799,7 @@ type MockSimpleFunExpectWithTimes struct {
 
 type MockSimpleFunWhen struct {
 	expected []*struct {
-		fun func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())
+		fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -817,8 +817,8 @@ type MockSimpleFunWhenWithTimes struct {
 }
 
 // Return the provided values when called
-func (_this *MockSimpleFunWhen) Return(r func(), r2 func()) *MockSimpleTimes[*MockSimpleFunWhen] {
-	_this.expected[len(_this.expected) -1].fun = func(func(func(string, string) (int, int), func(string, string) (int, int)), func(func(string, string) (int, int), func(string, string) (int, int))) (func(), func()) { return r, r2 }
+func (_this *MockSimpleFunWhen) Return(_r func(), _r2 func()) *MockSimpleTimes[*MockSimpleFunWhen] {
+	_this.expected[len(_this.expected) -1].fun = func(func(func(string, string) (int, int), func(string, string) (int, int)), func(func(string, string) (int, int), func(string, string) (int, int))) (func(), func()) { return _r, _r2 }
 	return &MockSimpleTimes[*MockSimpleFunWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
 		then: _this.then,
@@ -828,7 +828,7 @@ func (_this *MockSimpleFunWhen) Return(r func(), r2 func()) *MockSimpleTimes[*Mo
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockSimpleFunWhen) Do(do func(a func(func(string, string) (int, int), func(string, string) (int, int)), b func(func(string, string) (int, int), func(string, string) (int, int))) (r func(), r2 func())) *MockSimpleTimes[*MockSimpleFunWhen] {
+func (_this *MockSimpleFunWhen) Do(do func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())) *MockSimpleTimes[*MockSimpleFunWhen] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockSimpleTimes[*MockSimpleFunWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
