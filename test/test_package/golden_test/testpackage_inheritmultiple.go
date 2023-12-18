@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	io "io"
 	os "os"
+	other "github.com/test/testpackage/other"
 	reflect "reflect"
 	sync "sync"
 	testpackage "github.com/test/testpackage"
@@ -27,6 +28,13 @@ func NewMockInheritMultiple(t interface {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Own' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+				}
+			}
+		}
+		for _, v := range m.vDo {
+			for _, c := range v.expected {
+				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
+					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
 				}
 			}
 		}
@@ -79,6 +87,7 @@ type MockInheritMultiple struct {
 	}
 	
 	vOwn []*struct{validateArgs func(_i0 int, _i1 string) bool; expected []*struct{fun func(_i0 int, _i1 string) (_r0 int, _r1 string); expectedCalled int; called int; mutex sync.Mutex}}
+	vDo []*struct{validateArgs func(_i0 func(other.Custom) other.Custom) bool; expected []*struct{fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom); expectedCalled int; called int; mutex sync.Mutex}}
 	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
 	vUseStdType []*struct{validateArgs func(_fi os.FileInfo) bool; expected []*struct{fun func(_fi os.FileInfo) (_r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
 	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 error); expectedCalled int; called int; mutex sync.Mutex}}
@@ -102,6 +111,25 @@ func (_this *MockInheritMultiple) Own(_i0 int, _i1 string) (_r0 int, _r1 string)
 	}
 	_this.t.Helper()
 	_this.unexpectedCall("Own", _i0, _i1)
+	return
+}
+
+func (_this *MockInheritMultiple) Do(_i0 func(other.Custom) other.Custom) (_r0 other.Custom) {
+	for _, _check := range _this.vDo {
+		if _check.validateArgs == nil || _check.validateArgs(_i0) {
+			for _ctr, _exp := range _check.expected {
+				_exp.mutex.Lock()
+				if _exp.expectedCalled <= 0 || _ctr == len(_check.expected) - 1 || _exp.called < _exp.expectedCalled {
+					_exp.called++
+					_exp.mutex.Unlock()
+					return _exp.fun(_i0)
+				}
+				_exp.mutex.Unlock()
+			}
+		}
+	}
+	_this.t.Helper()
+	_this.unexpectedCall("Do", _i0)
 	return
 }
 
@@ -366,6 +394,144 @@ func (_this *MockInheritMultipleOwnWhen) Do(do func(_i0 int, _i1 string) (_r0 in
 		then: _this.then,
 		t: _this.t,
 		MockInheritMultipleThen: MockInheritMultipleThen[*MockInheritMultipleOwnWhen]{ then: _this.then, t: _this.t},
+	}
+}
+
+// Defines the behavior when Do of the mock is called.
+//
+// As a default the method is expected to be called once.
+// To change this behavior use the Times() method to define how often the function shall be called.
+func (_this *MockInheritMultipleWhen) Do() *MockInheritMultipleDoExpectWithTimes {
+	for _, f := range _this.m.vDo {
+		if f.validateArgs == nil {
+			_this.m.t.Helper()
+			_this.m.t.Fatalf("Unreachable condition. Call to 'Do' is already captured by previous WHEN statement.")
+		}
+	}
+	var defaultExpected struct {
+		fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
+		expectedCalled int
+		called int
+		mutex sync.Mutex
+	}
+	defaultExpected.fun = func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom) { return }
+	defaultExpected.expectedCalled = 1
+	
+	var validator struct {
+		validateArgs func(_i0 func(other.Custom) other.Custom) bool
+		expected []*struct {
+			fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
+			expectedCalled int
+			called int
+			mutex sync.Mutex
+		}
+	}
+	validator.expected = append(validator.expected, &defaultExpected)
+	_this.m.vDo = append(_this.m.vDo, &validator)
+	var _then func() *MockInheritMultipleDoWhen
+	_then = func() *MockInheritMultipleDoWhen {
+		var _newExpected struct {
+			fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
+			expectedCalled int
+			called int
+			mutex sync.Mutex
+		}
+		_newExpected.fun = func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom) { return }
+		_newExpected.expectedCalled = 1
+		
+		validator.expected = append(validator.expected, &_newExpected)
+		return &MockInheritMultipleDoWhen {
+			expected: validator.expected,
+			then: _then,
+			t: _this.m.t,
+		}
+	}
+	
+	times := &MockInheritMultipleTimes[*MockInheritMultipleDoWhen] {
+		expectedCalled: &validator.expected[0].expectedCalled,
+		then: _then,
+		t: _this.m.t,
+		MockInheritMultipleThen: MockInheritMultipleThen[*MockInheritMultipleDoWhen]{ then: _then, t: _this.m.t},
+	}
+	return &MockInheritMultipleDoExpectWithTimes {
+		MockInheritMultipleDoExpect: &MockInheritMultipleDoExpect {
+			MockInheritMultipleDoWhen: &MockInheritMultipleDoWhen {
+				expected: validator.expected,
+				then: _then,
+				t: _this.m.t,
+			},
+			validateArgs: &validator.validateArgs,
+			times: times,
+		},
+		MockInheritMultipleTimes: times,
+	}
+}
+
+type MockInheritMultipleDoExpect struct {
+	*MockInheritMultipleDoWhen
+	validateArgs *func(_i0 func(other.Custom) other.Custom) bool
+	times *MockInheritMultipleTimes[*MockInheritMultipleDoWhen]
+}
+
+// Expect will filter for given arguments.
+// Each argument is matched with a filter function. Only if all arguments match this mocked function will be called.
+
+// Arguments are either evaluated using the function, or ignored and always true if the function is set to nil.
+func (_this *MockInheritMultipleDoExpect) Expect(_0 func(func(other.Custom) other.Custom) bool) *MockInheritMultipleDoWhenWithTimes {
+	if !(_0 == nil) {
+		*_this.validateArgs = func(__i0 func(other.Custom) other.Custom) bool {
+			return (_0 == nil || _0(__i0))
+		}
+	}
+	return &MockInheritMultipleDoWhenWithTimes {
+		MockInheritMultipleDoWhen: _this.MockInheritMultipleDoWhen,
+		MockInheritMultipleTimes: _this.times,
+	}
+}
+
+type MockInheritMultipleDoExpectWithTimes struct {
+	*MockInheritMultipleTimes[*MockInheritMultipleDoWhen]
+	*MockInheritMultipleDoExpect
+}
+
+type MockInheritMultipleDoWhen struct {
+	expected []*struct {
+		fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
+		expectedCalled int
+		called int
+		mutex sync.Mutex
+	}
+	then func() *MockInheritMultipleDoWhen
+	t interface {
+		Fatalf(format string, args ...any)
+		Helper()
+	}
+}
+
+type MockInheritMultipleDoWhenWithTimes struct {
+	*MockInheritMultipleTimes[*MockInheritMultipleDoWhen]
+	*MockInheritMultipleDoWhen
+}
+
+// Return the provided values when called
+func (_this *MockInheritMultipleDoWhen) Return(_r0 other.Custom) *MockInheritMultipleTimes[*MockInheritMultipleDoWhen] {
+	_this.expected[len(_this.expected) -1].fun = func(func(other.Custom) other.Custom) (other.Custom) { return _r0 }
+	return &MockInheritMultipleTimes[*MockInheritMultipleDoWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockInheritMultipleThen: MockInheritMultipleThen[*MockInheritMultipleDoWhen]{ then: _this.then, t: _this.t},
+	}
+}
+
+// Do will execute the provided function and return the result when called
+func (_this *MockInheritMultipleDoWhen) Do(do func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)) *MockInheritMultipleTimes[*MockInheritMultipleDoWhen] {
+	_this.expected[len(_this.expected) -1].fun = do
+	return &MockInheritMultipleTimes[*MockInheritMultipleDoWhen] {
+		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
+		then: _this.then,
+		t: _this.t,
+		MockInheritMultipleThen: MockInheritMultipleThen[*MockInheritMultipleDoWhen]{ then: _this.then, t: _this.t},
 	}
 }
 

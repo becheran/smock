@@ -138,7 +138,7 @@ func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 			return model.InterfaceResult{}, fmt.Errorf("found unexported method '%s'. Mock creation not possible", name)
 		}
 
-		logger.Printf("found exported method '%s'", name)
+		logger.Printf("Found exported method '%s'", name)
 		getList := func(list *ast.FieldList) []*ast.Field {
 			if list == nil {
 				return nil
@@ -348,7 +348,11 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 	case *ast.FuncType:
 		identType += "func("
 		for _, param := range t.Params.List {
-			for i := 0; i < len(param.Names); i++ {
+			sameType := len(param.Names)
+			if sameType == 0 {
+				sameType = 1
+			}
+			for i := 0; i < sameType; i++ {
 				identType += tr.resolveType(param.Type)
 				identType += ", "
 			}
@@ -364,9 +368,15 @@ func (tr *typeResolver) resolveType(exp ast.Expr) (identType string) {
 				identType += "("
 			}
 			for _, param := range t.Results.List {
-				for i := 0; i < len(param.Names); i++ {
+				sameType := len(param.Names)
+				if sameType == 0 {
+					sameType = 1
+				}
+				for i := 0; i < sameType; i++ {
 					identType += tr.resolveType(param.Type)
-					identType += ", "
+					if isMultiple {
+						identType += ", "
+					}
 				}
 			}
 			if isMultiple {

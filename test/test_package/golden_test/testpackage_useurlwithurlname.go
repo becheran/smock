@@ -49,7 +49,7 @@ type MockUseUrlWithUrlName struct {
 	}
 	
 	vInUrl []*struct{validateArgs func(_url url.URL, _fun func(url.URL)) bool; expected []*struct{fun func(_url url.URL, _fun func(url.URL)); expectedCalled int; called int; mutex sync.Mutex}}
-	vRetUrl []*struct{validateArgs func() bool; expected []*struct{fun func() (_url url.URL, _fun func(url.URL)); expectedCalled int; called int; mutex sync.Mutex}}
+	vRetUrl []*struct{validateArgs func() bool; expected []*struct{fun func() (_url url.URL, _fun func() url.URL); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockUseUrlWithUrlName) InUrl(_url url.URL, _fun func(url.URL)) {
@@ -71,7 +71,7 @@ func (_this *MockUseUrlWithUrlName) InUrl(_url url.URL, _fun func(url.URL)) {
 	_this.unexpectedCall("InUrl", _url, _fun)
 }
 
-func (_this *MockUseUrlWithUrlName) RetUrl() (_url url.URL, _fun func(url.URL)) {
+func (_this *MockUseUrlWithUrlName) RetUrl() (_url url.URL, _fun func() url.URL) {
 	for _, _check := range _this.vRetUrl {
 		if _check.validateArgs == nil || _check.validateArgs() {
 			for _ctr, _exp := range _check.expected {
@@ -260,18 +260,18 @@ func (_this *MockUseUrlWithUrlNameWhen) RetUrl() *MockUseUrlWithUrlNameRetUrlWhe
 		}
 	}
 	var defaultExpected struct {
-		fun func() (_url url.URL, _fun func(url.URL))
+		fun func() (_url url.URL, _fun func() url.URL)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
 	}
-	defaultExpected.fun = func() (_url url.URL, _fun func(url.URL)) { return }
+	defaultExpected.fun = func() (_url url.URL, _fun func() url.URL) { return }
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
 		validateArgs func() bool
 		expected []*struct {
-			fun func() (_url url.URL, _fun func(url.URL))
+			fun func() (_url url.URL, _fun func() url.URL)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
@@ -282,12 +282,12 @@ func (_this *MockUseUrlWithUrlNameWhen) RetUrl() *MockUseUrlWithUrlNameRetUrlWhe
 	var _then func() *MockUseUrlWithUrlNameRetUrlWhen
 	_then = func() *MockUseUrlWithUrlNameRetUrlWhen {
 		var _newExpected struct {
-			fun func() (_url url.URL, _fun func(url.URL))
+			fun func() (_url url.URL, _fun func() url.URL)
 			expectedCalled int
 			called int
 			mutex sync.Mutex
 		}
-		_newExpected.fun = func() (_url url.URL, _fun func(url.URL)) { return }
+		_newExpected.fun = func() (_url url.URL, _fun func() url.URL) { return }
 		_newExpected.expectedCalled = 1
 		
 		validator.expected = append(validator.expected, &_newExpected)
@@ -316,7 +316,7 @@ func (_this *MockUseUrlWithUrlNameWhen) RetUrl() *MockUseUrlWithUrlNameRetUrlWhe
 
 type MockUseUrlWithUrlNameRetUrlWhen struct {
 	expected []*struct {
-		fun func() (_url url.URL, _fun func(url.URL))
+		fun func() (_url url.URL, _fun func() url.URL)
 		expectedCalled int
 		called int
 		mutex sync.Mutex
@@ -334,8 +334,8 @@ type MockUseUrlWithUrlNameRetUrlWhenWithTimes struct {
 }
 
 // Return the provided values when called
-func (_this *MockUseUrlWithUrlNameRetUrlWhen) Return(_url url.URL, _fun func(url.URL)) *MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
-	_this.expected[len(_this.expected) -1].fun = func() (url.URL, func(url.URL)) { return _url, _fun }
+func (_this *MockUseUrlWithUrlNameRetUrlWhen) Return(_url url.URL, _fun func() url.URL) *MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
+	_this.expected[len(_this.expected) -1].fun = func() (url.URL, func() url.URL) { return _url, _fun }
 	return &MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,
 		then: _this.then,
@@ -345,7 +345,7 @@ func (_this *MockUseUrlWithUrlNameRetUrlWhen) Return(_url url.URL, _fun func(url
 }
 
 // Do will execute the provided function and return the result when called
-func (_this *MockUseUrlWithUrlNameRetUrlWhen) Do(do func() (_url url.URL, _fun func(url.URL))) *MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
+func (_this *MockUseUrlWithUrlNameRetUrlWhen) Do(do func() (_url url.URL, _fun func() url.URL)) *MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
 	_this.expected[len(_this.expected) -1].fun = do
 	return &MockUseUrlWithUrlNameTimes[*MockUseUrlWithUrlNameRetUrlWhen] {
 		expectedCalled: &_this.expected[len(_this.expected) -1].expectedCalled,

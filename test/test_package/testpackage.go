@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/url"
 	"os"
+
+	"github.com/test/testpackage/other"
 )
 
 //go:generate smock -debug
@@ -29,6 +31,7 @@ type InheritExt io.ReadSeekCloser
 
 //go:generate smock -debug
 type InheritMultiple interface {
+	other.Bar
 	io.ReadSeekCloser
 	Extend
 	Own(int, string) (int, string)
@@ -55,5 +58,5 @@ type unexported interface {
 //go:generate smock -debug
 type UseUrlWithUrlName interface {
 	InUrl(url url.URL, fun func(url url.URL))
-	RetUrl() (url url.URL, fun func(url url.URL))
+	RetUrl() (url url.URL, fun func() url.URL)
 }
