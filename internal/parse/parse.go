@@ -151,7 +151,7 @@ func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 			Params:     identResolver.fieldListToIdent(getList(meth.Params)),
 			Results:    identResolver.fieldListToIdent(getList(meth.Results)),
 		}
-		i.Methods = append(i.Methods, method)
+		i.Methods = appendMethods(i.Methods, method)
 	}
 
 	// TODO: Move to own go function
@@ -232,7 +232,7 @@ func ParseInterface(ts *ast.TypeSpec, pkgName, file string, imports []*ast.Impor
 	})
 
 	for _, inheritInterface := range inheritInterfaces {
-		i.Methods = append(i.Methods, inheritInterface.Methods...)
+		i.Methods = appendMethods(i.Methods, inheritInterface.Methods...)
 
 		for _, genImport := range inheritInterface.Imports {
 			alreadyAdded := false
@@ -463,4 +463,23 @@ func ImportPath(file string) string {
 		log.Fatalf("Failed to find module. %s", err)
 	}
 	return modInfo.ModImportPath(path.Dir(pathhelper.PathToUnix(file)))
+}
+
+func appendMethods(methods []model.Method, newMethods ...model.Method) (res []model.Method) {
+	res = methods
+	for _, appendMethod := range newMethods {
+		alreadyExists := false
+		for _, existingMethod := range methods {
+			if existingMethod.Name == appendMethod.Name {
+				alreadyExists = true
+				break
+			}
+		}
+		if alreadyExists {
+			logger.Printf("Method %s already exists", appendMethod.Name)
+		} else {
+			res = append(res, appendMethod)
+		}
+	}
+	return
 }

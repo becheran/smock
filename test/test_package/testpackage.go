@@ -35,6 +35,7 @@ type InheritMultiple interface {
 	io.ReadSeekCloser
 	Extend
 	Own(int, string) (int, string)
+	Read(p []byte) (n int, err error) // Override io.ReaderSeekerCloser
 }
 
 //go:generate smock -debug
