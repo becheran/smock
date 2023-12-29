@@ -11,7 +11,8 @@ import (
 )
 
 // NewMockBar creates a new mock object which implements the corresponding interface.
-// All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.   
+// All function calls can be mocked with a custom behavior for tests using the WHEN function on the mock object.
+// The mock will use the passed in testing.T to report test failures.
 func NewMockBar(t interface {
 	Fatalf(format string, args ...any)
 	Helper()
