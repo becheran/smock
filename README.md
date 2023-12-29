@@ -29,10 +29,9 @@ So why "yet another mock generator", or in other words "what does *smock* offer 
 
 The intention of *smock* is to simplify the process of manually mocking interfaces. The tool focused on the following features:
 
-- No additional libraries required
-- Work with `go:generate` annotation without much configuration
-- Can be used as a [library of a project](#library-tool) or as a [standalone tool](#standalone-tool)
-- Keep type information when writing `Do` or `Return` blocks of mock object
+- Can be used as a [library of a project](#library-tool) or as a [standalone tool](#standalone-tool) using `go generate`
+- No boilerplate code such as `gomock.Controller` required to use the mock objects
+- Keep type information of input and return parameter when using the test doubles
 - Clear and intuitive interface for mocked objects. No unnecessary info provided. For example there is no `Return` expression for mocked functions that do not return a value.
 - Fast parsing and generation
 - No complex builtin assertion capabilities. Though, allow them to be added if needed for specific tests
