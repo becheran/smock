@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -24,35 +25,35 @@ func NewMockSimple(t interface {
 		for _, v := range m.vFoo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vSingleArg {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'SingleArg' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'SingleArg' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vBar {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vBaz {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vFun {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Fun' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Fun' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -69,11 +70,11 @@ type MockSimple struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
-	vSingleArg []*struct{validateArgs func(_i0 int) bool; expected []*struct{fun func(_i0 int); expectedCalled int; called int; mutex sync.Mutex}}
-	vBar []*struct{validateArgs func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool; expected []*struct{fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string); expectedCalled int; called int; mutex sync.Mutex}}
-	vBaz []*struct{validateArgs func(_a int, _b string) bool; expected []*struct{fun func(_a int, _b string) (_s string); expectedCalled int; called int; mutex sync.Mutex}}
-	vFun []*struct{validateArgs func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool; expected []*struct{fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()); expectedCalled int; called int; mutex sync.Mutex}}
+	vFoo []*struct{location string; validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
+	vSingleArg []*struct{location string; validateArgs func(_i0 int) bool; expected []*struct{fun func(_i0 int); expectedCalled int; called int; mutex sync.Mutex}}
+	vBar []*struct{location string; validateArgs func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool; expected []*struct{fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string); expectedCalled int; called int; mutex sync.Mutex}}
+	vBaz []*struct{location string; validateArgs func(_a int, _b string) bool; expected []*struct{fun func(_a int, _b string) (_s string); expectedCalled int; called int; mutex sync.Mutex}}
+	vFun []*struct{location string; validateArgs func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool; expected []*struct{fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func()); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockSimple) Foo() {
@@ -223,6 +224,7 @@ func (_this *MockSimpleWhen) Foo() *MockSimpleFooWhenWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func()
@@ -230,6 +232,9 @@ func (_this *MockSimpleWhen) Foo() *MockSimpleFooWhenWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFoo = append(_this.m.vFoo, &validator)
@@ -319,6 +324,7 @@ func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_i0 int) bool
 		expected []*struct {
 			fun func(_i0 int)
@@ -326,6 +332,9 @@ func (_this *MockSimpleWhen) SingleArg() *MockSimpleSingleArgExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vSingleArg = append(_this.m.vSingleArg, &validator)
@@ -446,6 +455,7 @@ func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) bool
 		expected []*struct {
 			fun func(_a int, _b string, _c struct{}, _d *struct{}, _e any, _f []byte) (_r0 string)
@@ -453,6 +463,9 @@ func (_this *MockSimpleWhen) Bar() *MockSimpleBarExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBar = append(_this.m.vBar, &validator)
@@ -584,6 +597,7 @@ func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_a int, _b string) bool
 		expected []*struct {
 			fun func(_a int, _b string) (_s string)
@@ -591,6 +605,9 @@ func (_this *MockSimpleWhen) Baz() *MockSimpleBazExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBaz = append(_this.m.vBaz, &validator)
@@ -722,6 +739,7 @@ func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) bool
 		expected []*struct {
 			fun func(_a func(func(string, string) (int, int), func(string, string) (int, int)), _b func(func(string, string) (int, int), func(string, string) (int, int))) (_r func(), _r2 func())
@@ -729,6 +747,9 @@ func (_this *MockSimpleWhen) Fun() *MockSimpleFunExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFun = append(_this.m.vFun, &validator)

@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -24,21 +25,21 @@ func NewMockWithLambda[T comparable](t interface {
 		for _, v := range m.vFoo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vBar {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Bar' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vBaz {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Baz' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -55,9 +56,9 @@ type MockWithLambda[T comparable] struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func(_a int, _b ...string) bool; expected []*struct{fun func(_a int, _b ...string) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
-	vBar []*struct{validateArgs func(_b ...struct{}) bool; expected []*struct{fun func(_b ...struct{}) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
-	vBaz []*struct{validateArgs func(_b ...T) bool; expected []*struct{fun func(_b ...T) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
+	vFoo []*struct{location string; validateArgs func(_a int, _b ...string) bool; expected []*struct{fun func(_a int, _b ...string) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
+	vBar []*struct{location string; validateArgs func(_b ...struct{}) bool; expected []*struct{fun func(_b ...struct{}) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
+	vBaz []*struct{location string; validateArgs func(_b ...T) bool; expected []*struct{fun func(_b ...T) (_r0 bool); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockWithLambda[T]) Foo(_a int, _b ...string) (_r0 bool) {
@@ -169,6 +170,7 @@ func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooExpectWithTimes[T] {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_a int, _b ...string) bool
 		expected []*struct {
 			fun func(_a int, _b ...string) (_r0 bool)
@@ -176,6 +178,9 @@ func (_this *MockWithLambdaWhen[T]) Foo() *MockWithLambdaFooExpectWithTimes[T] {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFoo = append(_this.m.vFoo, &validator)
@@ -312,6 +317,7 @@ func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarExpectWithTimes[T] {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_b ...struct{}) bool
 		expected []*struct {
 			fun func(_b ...struct{}) (_r0 bool)
@@ -319,6 +325,9 @@ func (_this *MockWithLambdaWhen[T]) Bar() *MockWithLambdaBarExpectWithTimes[T] {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBar = append(_this.m.vBar, &validator)
@@ -455,6 +464,7 @@ func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazExpectWithTimes[T] {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_b ...T) bool
 		expected []*struct {
 			fun func(_b ...T) (_r0 bool)
@@ -462,6 +472,9 @@ func (_this *MockWithLambdaWhen[T]) Baz() *MockWithLambdaBazExpectWithTimes[T] {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vBaz = append(_this.m.vBaz, &validator)

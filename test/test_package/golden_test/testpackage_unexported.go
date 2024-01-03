@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -24,7 +25,7 @@ func NewMockunexported(t interface {
 		for _, v := range m.vFoo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -41,7 +42,7 @@ type Mockunexported struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
+	vFoo []*struct{location string; validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *Mockunexported) Foo() {
@@ -115,6 +116,7 @@ func (_this *MockunexportedWhen) Foo() *MockunexportedFooWhenWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func()
@@ -122,6 +124,9 @@ func (_this *MockunexportedWhen) Foo() *MockunexportedFooWhenWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFoo = append(_this.m.vFoo, &validator)

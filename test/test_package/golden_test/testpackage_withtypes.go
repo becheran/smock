@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -24,14 +25,14 @@ func NewMockWithTypes[T any, B any](t interface {
 		for _, v := range m.vFoo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Foo' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vEmpty {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Empty' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Empty' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -48,8 +49,8 @@ type MockWithTypes[T any, B any] struct {
 		Helper()
 	}
 	
-	vFoo []*struct{validateArgs func(_a T, _b T) bool; expected []*struct{fun func(_a T, _b T) (_r0 B); expectedCalled int; called int; mutex sync.Mutex}}
-	vEmpty []*struct{validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
+	vFoo []*struct{location string; validateArgs func(_a T, _b T) bool; expected []*struct{fun func(_a T, _b T) (_r0 B); expectedCalled int; called int; mutex sync.Mutex}}
+	vEmpty []*struct{location string; validateArgs func() bool; expected []*struct{fun func(); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockWithTypes[T, B]) Foo(_a T, _b T) (_r0 B) {
@@ -142,6 +143,7 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_a T, _b T) bool
 		expected []*struct {
 			fun func(_a T, _b T) (_r0 B)
@@ -149,6 +151,9 @@ func (_this *MockWithTypesWhen[T, B]) Foo() *MockWithTypesFooExpectWithTimes[T, 
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vFoo = append(_this.m.vFoo, &validator)
@@ -280,6 +285,7 @@ func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func()
@@ -287,6 +293,9 @@ func (_this *MockWithTypesWhen[T, B]) Empty() *MockWithTypesEmptyWhenWithTimes[T
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vEmpty = append(_this.m.vEmpty, &validator)

@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	other "github.com/test/testpackage/other"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -25,7 +26,7 @@ func NewMockBar(t interface {
 		for _, v := range m.vDo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -42,7 +43,7 @@ type MockBar struct {
 		Helper()
 	}
 	
-	vDo []*struct{validateArgs func(_i0 func(other.Custom) other.Custom) bool; expected []*struct{fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom); expectedCalled int; called int; mutex sync.Mutex}}
+	vDo []*struct{location string; validateArgs func(_i0 func(other.Custom) other.Custom) bool; expected []*struct{fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockBar) Do(_i0 func(other.Custom) other.Custom) (_r0 other.Custom) {
@@ -116,6 +117,7 @@ func (_this *MockBarWhen) Do() *MockBarDoExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_i0 func(other.Custom) other.Custom) bool
 		expected []*struct {
 			fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
@@ -123,6 +125,9 @@ func (_this *MockBarWhen) Do() *MockBarDoExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vDo = append(_this.m.vDo, &validator)

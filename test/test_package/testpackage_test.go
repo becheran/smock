@@ -10,6 +10,30 @@ import (
 	testpackage_mock "github.com/test/testpackage/golden_test"
 )
 
+func Test_CalledToOften_PrintLineNumber(t *testing.T) {
+	tester := &Tester{}
+	m := testpackage_mock.NewMockSimple(tester)
+
+	m.WHEN().Foo()
+	m.Foo()
+	m.Foo()
+	tester.cleanup()
+
+	assert.Contains(t, tester.errStr, "testpackage_test.go:17")
+}
+
+func Test_CalledNotEnough_PrintLineNumber(t *testing.T) {
+	tester := &Tester{}
+	m := testpackage_mock.NewMockSimple(tester)
+
+	m.WHEN().Foo().Times(1).Then().Do(func() {}).Times(2)
+	m.Foo()
+	m.Foo()
+	tester.cleanup()
+
+	assert.Contains(t, tester.errStr, "testpackage_test.go:29")
+}
+
 func TestSimpleWhen(t *testing.T) {
 	m := testpackage_mock.NewMockSimple(t)
 	m.WHEN().
@@ -163,8 +187,7 @@ func TestThen(t *testing.T) {
 
 	tester.cleanup()
 
-	assert.Equal(t, `
-Expected 'Foo' to be called 3 times, but was called 7 times.`, tester.errStr)
+	assert.Contains(t, tester.errStr, `Expected 'Foo' to be called 3 times, but was called 7 times.`)
 }
 
 func TestThenPass(t *testing.T) {

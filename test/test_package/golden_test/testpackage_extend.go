@@ -8,6 +8,7 @@ import (
 	io "io"
 	os "os"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 	testpackage "github.com/test/testpackage"
 )
@@ -27,14 +28,14 @@ func NewMockExtend(t interface {
 		for _, v := range m.vRetType {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vUseStdType {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -51,8 +52,8 @@ type MockExtend struct {
 		Helper()
 	}
 	
-	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
-	vUseStdType []*struct{validateArgs func(_fi os.FileInfo) bool; expected []*struct{fun func(_fi os.FileInfo) (_r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
+	vRetType []*struct{location string; validateArgs func() bool; expected []*struct{fun func() (_r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
+	vUseStdType []*struct{location string; validateArgs func(_fi os.FileInfo) bool; expected []*struct{fun func(_fi os.FileInfo) (_r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockExtend) RetType() (_r0 testpackage.MyType) {
@@ -145,6 +146,7 @@ func (_this *MockExtendWhen) RetType() *MockExtendRetTypeWhenWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func() (_r0 testpackage.MyType)
@@ -152,6 +154,9 @@ func (_this *MockExtendWhen) RetType() *MockExtendRetTypeWhenWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
@@ -252,6 +257,7 @@ func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_fi os.FileInfo) bool
 		expected []*struct {
 			fun func(_fi os.FileInfo) (_r0 io.Reader)
@@ -259,6 +265,9 @@ func (_this *MockExtendWhen) UseStdType() *MockExtendUseStdTypeExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)

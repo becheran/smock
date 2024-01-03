@@ -9,6 +9,7 @@ import (
 	os "os"
 	other "github.com/test/testpackage/other"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 	testpackage "github.com/test/testpackage"
 )
@@ -28,49 +29,49 @@ func NewMockInheritMultiple(t interface {
 		for _, v := range m.vOwn {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Own' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Own' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vRead {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Read' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Read' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vDo {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vRetType {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vUseStdType {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vClose {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Close' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Close' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vSeek {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Seek' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Seek' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -87,13 +88,13 @@ type MockInheritMultiple struct {
 		Helper()
 	}
 	
-	vOwn []*struct{validateArgs func(_i0 int, _i1 string) bool; expected []*struct{fun func(_i0 int, _i1 string) (_r0 int, _r1 string); expectedCalled int; called int; mutex sync.Mutex}}
-	vRead []*struct{validateArgs func(_p []byte) bool; expected []*struct{fun func(_p []byte) (_n int, _err error); expectedCalled int; called int; mutex sync.Mutex}}
-	vDo []*struct{validateArgs func(_i0 func(other.Custom) other.Custom) bool; expected []*struct{fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom); expectedCalled int; called int; mutex sync.Mutex}}
-	vRetType []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
-	vUseStdType []*struct{validateArgs func(_fi os.FileInfo) bool; expected []*struct{fun func(_fi os.FileInfo) (_r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
-	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 error); expectedCalled int; called int; mutex sync.Mutex}}
-	vSeek []*struct{validateArgs func(_offset int64, _whence int) bool; expected []*struct{fun func(_offset int64, _whence int) (_r0 int64, _r1 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vOwn []*struct{location string; validateArgs func(_i0 int, _i1 string) bool; expected []*struct{fun func(_i0 int, _i1 string) (_r0 int, _r1 string); expectedCalled int; called int; mutex sync.Mutex}}
+	vRead []*struct{location string; validateArgs func(_p []byte) bool; expected []*struct{fun func(_p []byte) (_n int, _err error); expectedCalled int; called int; mutex sync.Mutex}}
+	vDo []*struct{location string; validateArgs func(_i0 func(other.Custom) other.Custom) bool; expected []*struct{fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom); expectedCalled int; called int; mutex sync.Mutex}}
+	vRetType []*struct{location string; validateArgs func() bool; expected []*struct{fun func() (_r0 testpackage.MyType); expectedCalled int; called int; mutex sync.Mutex}}
+	vUseStdType []*struct{location string; validateArgs func(_fi os.FileInfo) bool; expected []*struct{fun func(_fi os.FileInfo) (_r0 io.Reader); expectedCalled int; called int; mutex sync.Mutex}}
+	vClose []*struct{location string; validateArgs func() bool; expected []*struct{fun func() (_r0 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vSeek []*struct{location string; validateArgs func(_offset int64, _whence int) bool; expected []*struct{fun func(_offset int64, _whence int) (_r0 int64, _r1 error); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockInheritMultiple) Own(_i0 int, _i1 string) (_r0 int, _r1 string) {
@@ -281,6 +282,7 @@ func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTim
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_i0 int, _i1 string) bool
 		expected []*struct {
 			fun func(_i0 int, _i1 string) (_r0 int, _r1 string)
@@ -288,6 +290,9 @@ func (_this *MockInheritMultipleWhen) Own() *MockInheritMultipleOwnExpectWithTim
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vOwn = append(_this.m.vOwn, &validator)
@@ -419,6 +424,7 @@ func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithT
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_p []byte) bool
 		expected []*struct {
 			fun func(_p []byte) (_n int, _err error)
@@ -426,6 +432,9 @@ func (_this *MockInheritMultipleWhen) Read() *MockInheritMultipleReadExpectWithT
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRead = append(_this.m.vRead, &validator)
@@ -557,6 +566,7 @@ func (_this *MockInheritMultipleWhen) Do() *MockInheritMultipleDoExpectWithTimes
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_i0 func(other.Custom) other.Custom) bool
 		expected []*struct {
 			fun func(_i0 func(other.Custom) other.Custom) (_r0 other.Custom)
@@ -564,6 +574,9 @@ func (_this *MockInheritMultipleWhen) Do() *MockInheritMultipleDoExpectWithTimes
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vDo = append(_this.m.vDo, &validator)
@@ -695,6 +708,7 @@ func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenW
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func() (_r0 testpackage.MyType)
@@ -702,6 +716,9 @@ func (_this *MockInheritMultipleWhen) RetType() *MockInheritMultipleRetTypeWhenW
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRetType = append(_this.m.vRetType, &validator)
@@ -802,6 +819,7 @@ func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTyp
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_fi os.FileInfo) bool
 		expected []*struct {
 			fun func(_fi os.FileInfo) (_r0 io.Reader)
@@ -809,6 +827,9 @@ func (_this *MockInheritMultipleWhen) UseStdType() *MockInheritMultipleUseStdTyp
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vUseStdType = append(_this.m.vUseStdType, &validator)
@@ -940,6 +961,7 @@ func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithT
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func() (_r0 error)
@@ -947,6 +969,9 @@ func (_this *MockInheritMultipleWhen) Close() *MockInheritMultipleCloseWhenWithT
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vClose = append(_this.m.vClose, &validator)
@@ -1047,6 +1072,7 @@ func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithT
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_offset int64, _whence int) bool
 		expected []*struct {
 			fun func(_offset int64, _whence int) (_r0 int64, _r1 error)
@@ -1054,6 +1080,9 @@ func (_this *MockInheritMultipleWhen) Seek() *MockInheritMultipleSeekExpectWithT
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vSeek = append(_this.m.vSeek, &validator)

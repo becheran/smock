@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 	url "net/url"
 )
@@ -25,14 +26,14 @@ func NewMockUseUrlWithUrlName(t interface {
 		for _, v := range m.vInUrl {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'InUrl' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'InUrl' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vRetUrl {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'RetUrl' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'RetUrl' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -49,8 +50,8 @@ type MockUseUrlWithUrlName struct {
 		Helper()
 	}
 	
-	vInUrl []*struct{validateArgs func(_url url.URL, _fun func(url.URL)) bool; expected []*struct{fun func(_url url.URL, _fun func(url.URL)); expectedCalled int; called int; mutex sync.Mutex}}
-	vRetUrl []*struct{validateArgs func() bool; expected []*struct{fun func() (_url url.URL, _fun func() url.URL); expectedCalled int; called int; mutex sync.Mutex}}
+	vInUrl []*struct{location string; validateArgs func(_url url.URL, _fun func(url.URL)) bool; expected []*struct{fun func(_url url.URL, _fun func(url.URL)); expectedCalled int; called int; mutex sync.Mutex}}
+	vRetUrl []*struct{location string; validateArgs func() bool; expected []*struct{fun func() (_url url.URL, _fun func() url.URL); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockUseUrlWithUrlName) InUrl(_url url.URL, _fun func(url.URL)) {
@@ -143,6 +144,7 @@ func (_this *MockUseUrlWithUrlNameWhen) InUrl() *MockUseUrlWithUrlNameInUrlExpec
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_url url.URL, _fun func(url.URL)) bool
 		expected []*struct {
 			fun func(_url url.URL, _fun func(url.URL))
@@ -150,6 +152,9 @@ func (_this *MockUseUrlWithUrlNameWhen) InUrl() *MockUseUrlWithUrlNameInUrlExpec
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vInUrl = append(_this.m.vInUrl, &validator)
@@ -270,6 +275,7 @@ func (_this *MockUseUrlWithUrlNameWhen) RetUrl() *MockUseUrlWithUrlNameRetUrlWhe
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func() (_url url.URL, _fun func() url.URL)
@@ -277,6 +283,9 @@ func (_this *MockUseUrlWithUrlNameWhen) RetUrl() *MockUseUrlWithUrlNameRetUrlWhe
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRetUrl = append(_this.m.vRetUrl, &validator)

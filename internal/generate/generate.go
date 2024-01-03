@@ -42,6 +42,7 @@ func GenerateMock(res model.InterfaceResult, version string) (mock []byte, err e
 	fmtAlreadyImported := false
 	reflectAlreadyImported := false
 	syncAlreadyImported := false
+	runtimeAlreadyImported := false
 	for _, i := range res.Imports {
 		switch i.ImportName() {
 		case "fmt":
@@ -49,6 +50,8 @@ func GenerateMock(res model.InterfaceResult, version string) (mock []byte, err e
 		case "reflect":
 			reflectAlreadyImported = true
 		case "sync":
+			syncAlreadyImported = true
+		case "runtime":
 			syncAlreadyImported = true
 		}
 	}
@@ -60,6 +63,9 @@ func GenerateMock(res model.InterfaceResult, version string) (mock []byte, err e
 	}
 	if !syncAlreadyImported {
 		res.Imports = append(res.Imports, model.Import{Path: "sync"})
+	}
+	if !runtimeAlreadyImported {
+		res.Imports = append(res.Imports, model.Import{Path: "runtime"})
 	}
 	sort.SliceStable(res.Imports, func(a, b int) bool {
 		return strings.Compare(res.Imports[a].ImportName(), res.Imports[b].ImportName()) < 0
@@ -98,7 +104,7 @@ func NewMock%s%s(t interface {
 		w.P("if c.expectedCalled >= 0 && c.expectedCalled != c.called {")
 		w.Ident()
 		// TODO add args?
-		w.P("errStr += fmt.Sprintf(\"\\nExpected '%s' to be called %%d times, but was called %%d times.\", c.expectedCalled, c.called)", m.Name)
+		w.P("errStr += fmt.Sprintf(\"\\nExpected '%s' to be called %%d times, but was called %%d times. (%%s)\", c.expectedCalled, c.called, v.location)", m.Name)
 		w.EndIdent()
 		w.P("}")
 		w.EndIdent()
@@ -124,7 +130,7 @@ func NewMock%s%s(t interface {
 	printHelperInterface()
 	w.P("")
 	for _, m := range res.Methods {
-		w.P("v%s []*struct{validateArgs func(%s) bool; expected []*struct{fun func%s; expectedCalled int; called int; mutex sync.Mutex}}",
+		w.P("v%s []*struct{location string; validateArgs func(%s) bool; expected []*struct{fun func%s; expectedCalled int; called int; mutex sync.Mutex}}",
 			m.Name, m.Params.IdentWithTypeString(model.IdentTypeInput), m.Signature())
 	}
 	w.EndIdent()
@@ -276,6 +282,7 @@ func NewMock%s%s(t interface {
 		w.P("")
 		w.P("var validator struct {")
 		w.Ident()
+		w.P("location string")
 		w.P("validateArgs func(%s) bool", f.Params.IdentWithTypeString(model.IdentTypeInput))
 		w.P("expected []*struct {")
 		w.Ident()
@@ -285,6 +292,11 @@ func NewMock%s%s(t interface {
 		w.P("mutex sync.Mutex")
 		w.EndIdent()
 		w.P("}")
+		w.EndIdent()
+		w.P("}")
+		w.P("if _, file, line, ok := runtime.Caller(1); ok {")
+		w.Ident()
+		w.P("validator.location = fmt.Sprintf(\"%%s:%%d\", file, line)")
 		w.EndIdent()
 		w.P("}")
 		w.P("validator.expected = append(validator.expected, &defaultExpected)")

@@ -6,6 +6,7 @@ package testpackage_mock
 import (
 	fmt "fmt"
 	reflect "reflect"
+	runtime "runtime"
 	sync "sync"
 )
 
@@ -24,21 +25,21 @@ func NewMockInheritExt(t interface {
 		for _, v := range m.vClose {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Close' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Close' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vRead {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Read' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Read' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
 		for _, v := range m.vSeek {
 			for _, c := range v.expected {
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
-					errStr += fmt.Sprintf("\nExpected 'Seek' to be called %d times, but was called %d times.", c.expectedCalled, c.called)
+					errStr += fmt.Sprintf("\nExpected 'Seek' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
 			}
 		}
@@ -55,9 +56,9 @@ type MockInheritExt struct {
 		Helper()
 	}
 	
-	vClose []*struct{validateArgs func() bool; expected []*struct{fun func() (_r0 error); expectedCalled int; called int; mutex sync.Mutex}}
-	vRead []*struct{validateArgs func(_p []byte) bool; expected []*struct{fun func(_p []byte) (_n int, _err error); expectedCalled int; called int; mutex sync.Mutex}}
-	vSeek []*struct{validateArgs func(_offset int64, _whence int) bool; expected []*struct{fun func(_offset int64, _whence int) (_r0 int64, _r1 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vClose []*struct{location string; validateArgs func() bool; expected []*struct{fun func() (_r0 error); expectedCalled int; called int; mutex sync.Mutex}}
+	vRead []*struct{location string; validateArgs func(_p []byte) bool; expected []*struct{fun func(_p []byte) (_n int, _err error); expectedCalled int; called int; mutex sync.Mutex}}
+	vSeek []*struct{location string; validateArgs func(_offset int64, _whence int) bool; expected []*struct{fun func(_offset int64, _whence int) (_r0 int64, _r1 error); expectedCalled int; called int; mutex sync.Mutex}}
 }
 
 func (_this *MockInheritExt) Close() (_r0 error) {
@@ -169,6 +170,7 @@ func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func() bool
 		expected []*struct {
 			fun func() (_r0 error)
@@ -176,6 +178,9 @@ func (_this *MockInheritExtWhen) Close() *MockInheritExtCloseWhenWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vClose = append(_this.m.vClose, &validator)
@@ -276,6 +281,7 @@ func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_p []byte) bool
 		expected []*struct {
 			fun func(_p []byte) (_n int, _err error)
@@ -283,6 +289,9 @@ func (_this *MockInheritExtWhen) Read() *MockInheritExtReadExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vRead = append(_this.m.vRead, &validator)
@@ -414,6 +423,7 @@ func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 	defaultExpected.expectedCalled = 1
 	
 	var validator struct {
+		location string
 		validateArgs func(_offset int64, _whence int) bool
 		expected []*struct {
 			fun func(_offset int64, _whence int) (_r0 int64, _r1 error)
@@ -421,6 +431,9 @@ func (_this *MockInheritExtWhen) Seek() *MockInheritExtSeekExpectWithTimes {
 			called int
 			mutex sync.Mutex
 		}
+	}
+	if _, file, line, ok := runtime.Caller(1); ok {
+		validator.location = fmt.Sprintf("%s:%d", file, line)
 	}
 	validator.expected = append(validator.expected, &defaultExpected)
 	_this.m.vSeek = append(_this.m.vSeek, &validator)
