@@ -15,7 +15,7 @@ import (
 )
 
 // GenerateMocks for interface at file and line
-func GenerateMocks(file string, line int) (mockFile string) {
+func GenerateMocks(file string, line int, version string) (mockFile string) {
 	importPath := parse.ImportPath(file)
 	fset := token.NewFileSet()
 	logger.Printf("Parse file '%s'\n", file)
@@ -45,7 +45,7 @@ func GenerateMocks(file string, line int) (mockFile string) {
 		}
 		mockFilePathCh <- mockFilePath
 	}()
-	m, err := generate.GenerateMock(i)
+	m, err := generate.GenerateMock(i, version)
 	if err != nil {
 		log.Fatalf("Failed to generate mock. %s", err)
 	}

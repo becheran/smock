@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/becheran/smock/internal/generate"
@@ -120,6 +121,9 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 		logger.EnableLogger()
 	}
 
+	version := libVersion()
+	logger.Printf("Generate mocks (version %s)", version)
+
 	fset := token.NewFileSet()
 
 	wd, err := os.Getwd()
@@ -147,7 +151,7 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 			logger.Printf("Parse dir '%s'", filePath)
 			dir, err := parser.ParseDir(fset, filePath, nil, 0)
 			if err != nil {
-				log.Fatalf("Failed to parse dir '%s'. %s", filePath, err)
+				return err
 			}
 			for _, pkg := range dir {
 				for fileName, file := range pkg.Files {
@@ -176,7 +180,7 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 							continue
 						}
 
-						m, err := generate.GenerateMock(i)
+						m, err := generate.GenerateMock(i, version)
 						if err != nil {
 							log.Fatalf("Failed to generate mock. %s", err)
 						}
@@ -199,4 +203,17 @@ func GenerateMocks(options ...Option) (mockFilePaths []string) {
 		panic(err)
 	}
 	return mockFilePaths
+}
+
+func libVersion() string {
+	version := "unknown"
+	if info, found := debug.ReadBuildInfo(); found {
+		for _, mod := range info.Deps {
+			if mod.Path == "github.com/becheran/smock" {
+				version = mod.Version
+				break
+			}
+		}
+	}
+	return version
 }

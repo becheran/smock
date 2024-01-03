@@ -15,18 +15,15 @@ import (
 
 func main() {
 	dbg := false
-	version := false
-
+	printVersion := false
 	flag.BoolVar(&dbg, "debug", false, "print debug information")
-	flag.BoolVar(&version, "v", false, "print smock version")
+	flag.BoolVar(&printVersion, "v", false, "print smock version")
 	flag.Parse()
 
-	if version {
-		v := "unknown"
-		if info, found := debug.ReadBuildInfo(); found {
-			v = info.Main.Version
-		}
-		fmt.Println(v)
+	version := mainVersion()
+
+	if printVersion {
+		fmt.Println(version)
 		return
 	}
 
@@ -52,5 +49,13 @@ func main() {
 	}
 	file := fmt.Sprintf("%s/%s", wd, fileName)
 
-	annotated.GenerateMocks(file, line)
+	annotated.GenerateMocks(file, line, version)
+}
+
+func mainVersion() string {
+	version := "unknown"
+	if info, found := debug.ReadBuildInfo(); found {
+		version = info.Main.Version
+	}
+	return version
 }

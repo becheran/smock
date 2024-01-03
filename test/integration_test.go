@@ -18,8 +18,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testPackagePath = "./test_package"
-const testGoldenFileDir = "golden_test"
+const (
+	testPackagePath   = "./test_package"
+	testGoldenFileDir = "golden_test"
+	testVersion       = "unknown"
+)
 
 var generate = flag.Bool("generate", false, "generate golden files")
 
@@ -40,7 +43,7 @@ func BenchmarkGenerate(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, i := range interfaces {
-			annotated.GenerateMocks(i.File, i.Line)
+			annotated.GenerateMocks(i.File, i.Line, testVersion)
 		}
 	}
 }
@@ -76,7 +79,7 @@ func TestGenerateAnnotated(t *testing.T) {
 
 	for _, i := range getAnnotatedInterfaces() {
 		fmt.Printf("Generate mocks for %s:%d\n", i.File, i.Line)
-		file := annotated.GenerateMocks(i.File, i.Line)
+		file := annotated.GenerateMocks(i.File, i.Line, testVersion)
 		source, err := os.Open(file)
 		if err != nil {
 			panic(err)
