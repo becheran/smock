@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/test/testpackage/other"
+	renamed "github.com/test/testpackage/other"
 )
 
 //go:generate smock -debug
@@ -31,7 +31,7 @@ type InheritExt io.ReadSeekCloser
 
 //go:generate smock -debug
 type InheritMultiple interface {
-	other.Bar
+	renamed.Bar
 	io.ReadSeekCloser
 	Extend
 	Own(int, string) (int, string)
