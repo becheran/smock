@@ -25,9 +25,11 @@ func NewMockBar(t interface {
 		errStr := ""
 		for _, v := range m.vDo {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		if errStr != "" {

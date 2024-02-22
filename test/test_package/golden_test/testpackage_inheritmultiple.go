@@ -28,51 +28,65 @@ func NewMockInheritMultiple(t interface {
 		errStr := ""
 		for _, v := range m.vOwn {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Own' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vRead {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Read' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vDo {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Do' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vRetType {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'RetType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vUseStdType {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'UseStdType' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vClose {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Close' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vSeek {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'Seek' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		if errStr != "" {

@@ -25,16 +25,20 @@ func NewMockUseUrlWithUrlName(t interface {
 		errStr := ""
 		for _, v := range m.vInUrl {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'InUrl' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		for _, v := range m.vRetUrl {
 			for _, c := range v.expected {
+				c.mutex.Lock()
 				if c.expectedCalled >= 0 && c.expectedCalled != c.called {
 					errStr += fmt.Sprintf("\nExpected 'RetUrl' to be called %d times, but was called %d times. (%s)", c.expectedCalled, c.called, v.location)
 				}
+				c.mutex.Unlock()
 			}
 		}
 		if errStr != "" {
