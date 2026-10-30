@@ -19,6 +19,19 @@ Simple and fast mock generator for golang
 
 ![Logo](./docs/logo.png)
 
+> [!NOTE]
+> **This project is no longer actively maintained.** It still works, but most of the reasons it was created are now covered by actively maintained tools. For new projects consider:
+>
+> - [mockery v3](https://github.com/vektra/mockery) which can generate type safe [moq](https://github.com/matryer/moq) style mocks without any controller boilerplate, or [testify](https://pkg.go.dev/github.com/stretchr/testify/mock) style mocks.
+> - [mockgen](https://github.com/uber-go/mock) maintained by *uber*. Use the `-typed` flag for type safe mocks.
+>
+> Since Go 1.24 any of these generators can be pinned as a dependency of a project with the [`tool` directive](https://go.dev/doc/modules/managing-dependencies#tools), so they do not need to be installed on a developer PC first. For example:
+>
+> ``` sh
+> go get -tool github.com/vektra/mockery/v3@latest
+> go tool mockery
+> ```
+
 ## Features
 
 Mocking interfaces for unit tests is a common task in *go* which can be done manually or using a generator which would automates the process of repeatably writing `structs` which fullfil the interfaces for testing.
@@ -59,7 +72,7 @@ Run the go generate command in the module root directory next to the `go.mod` fi
 
 ### Library Tool
 
-Using *smock* as an installed tool which is the same for all other mocking frameworks has the drawback that mock generation will fail if the tool is not installed on a developer PC as a prerequisite.
+Using *smock* as an installed tool has the drawback that mock generation will fail if the tool is not installed on a developer PC as a prerequisite. Since Go 1.24 this can also be solved for any generator with the [`tool` directive](https://go.dev/doc/modules/managing-dependencies#tools).
 
 Instead of using *smock* as a cli tool it is also possible to add *smock* as a library dependency to a project and still be able to run it via `go generate`.
 
